@@ -1,0 +1,40 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Flic Hub",
+        "description": "If you need help with the configuration have a look here: https://github.com/JohNan/flichub",
+        "data": {
+          "ip_address": "IP Address",
+          "port": "Port"
+        }
+      },
+      "devices": {
+        "title": "Flic Hub",
+        "description": "If you need help with the configuration have a look here: https://github.com/JohNan/flichub",
+        "data": {
+          "ip_address": "Discovered devices",
+          "port": "Port"
+        }
+      }
+    },
+    "error": {
+      "auth": "Unable to connect to device",
+      "no_devices": "No devices found. Enter IP and port manually"
+    },
+    "abort": {
+      "single_instance_allowed": "Only a single instance is allowed."
+    }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "data": {
+          "binary_sensor": "Binary sensor enabled",
+          "sensor": "Sensor enabled",
+          "switch": "Switch enabled"
+        }
+      }
+    }
+  }
+}

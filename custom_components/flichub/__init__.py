@@ -10,22 +10,22 @@ import logging
 from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT
 from homeassistant.core import Config
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers.dispatcher import dispatcher_send
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.update_coordinator import UpdateFailed
-from pyflichubclient.button import FlicButton
-from pyflichubclient.client import FlicHubTcpClient
-from pyflichubclient.event import Event
+from pyflichub.button import FlicButton
+from pyflichub.client import FlicHubTcpClient
+from pyflichub.event import Event
 from .api import FlicHubApiClient
 from .const import CONF_PASSWORD, CLIENT_READY_TIMEOUT, BINARY_SENSOR, UPDATE_TOPIC, EVENT_NAME, EVENT_DATA_NAME, \
     EVENT_DATA_ADDRESS, EVENT_DATA_TYPE
-from .const import CONF_IP_ADDRESS
 from .const import DOMAIN
 from .const import PLATFORMS
 from .const import STARTUP_MESSAGE
-from ...helpers.dispatcher import dispatcher_send
 
 SCAN_INTERVAL = timedelta(seconds=30)
 
@@ -43,7 +43,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data.setdefault(DOMAIN, {})
         _LOGGER.info(STARTUP_MESSAGE)
 
-    client = FlicHubTcpClient('192.168.1.249', 8124)
+    def on_button_clicked(button: FlicButton, event: Event):
+        dispatcher_send(hass, UPDATE_TOPIC, button, event)
+        _send_event(hass, button, event)
+
+    client = FlicHubTcpClient(
+        entry.data[CONF_IP_ADDRESS],
+        entry.data[CONF_PORT],
+        asyncio.get_event_loop(),
+        event_callback=on_button_clicked
+    )
     client_ready = asyncio.Event()
 
     def client_connected():
@@ -53,13 +62,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     def client_disconnected():
         _LOGGER.debug("Disconnected!")
 
-    def on_button_clicked(button: FlicButton, event: Event):
-        dispatcher_send(hass, UPDATE_TOPIC, button, event)
-        _send_event(hass, button, event)
-
     client.on_connected = client_connected
     client.on_disconnected = client_disconnected
-    client.on_button_clicked = on_button_clicked
 
     asyncio.create_task(client.async_connect())
 

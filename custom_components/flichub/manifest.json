@@ -3,9 +3,9 @@
   "name": "Flic Hub",
   "documentation": "https://github.com/JohNan/flichub",
   "issue_tracker": "https://github.com/JohNan/flichub/issues",
-  "config_flow": true,
+  "config_flow": false,
   "codeowners": ["@JohNan"],
-  "requirements": ["pyflichubclient"],
+  "requirements": ["pyflichub-tcpclient==0.0.1"],
   "dhcp": [
     {
       "hostname": "flichub",

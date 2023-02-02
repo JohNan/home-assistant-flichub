@@ -8,12 +8,11 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT
 from homeassistant.core import callback
-from pyflichubclient.client import FlicHubTcpClient
+from pyflichub.client import FlicHubTcpClient
 from .const import CLIENT_READY_TIMEOUT
 from .const import DOMAIN
 from .const import PLATFORMS
-from ..dhcp import IP_ADDRESS
-from ...helpers.aiohttp_client import async_create_clientsession
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 
@@ -33,9 +32,9 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_dhcp(self, discovery_info):
         """Handle dhcp discovery."""
-        self.ip_address = discovery_info[IP_ADDRESS]
+        self.ip_address = discovery_info.ip
         self._async_abort_entries_match({CONF_IP_ADDRESS: self.ip_address})
-        self.ip_address = discovery_info[IP_ADDRESS]
+        self.ip_address = discovery_info.ip
         self.context["title_placeholders"] = {CONF_IP_ADDRESS: self.ip_address}
         return await self.async_step_user()
 
@@ -120,7 +119,7 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def _test_credentials(self, ip, port):
         """Return true if credentials is valid."""
         try:
-            client = FlicHubTcpClient(ip, port)
+            client = FlicHubTcpClient(ip, port, asyncio.get_event_loop())
             client_ready = asyncio.Event()
 
             def client_connected():
@@ -132,14 +131,15 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             client.on_connected = client_connected
             client.on_disconnected = client_disconnected
 
-            asyncio.create_task(client.async_connect(3))
+            asyncio.create_task(client.async_connect())
 
             with async_timeout.timeout(CLIENT_READY_TIMEOUT):
                 await client_ready.wait()
 
             client.disconnect()
             return True
-        except Exception:  # pylint: disable=broad-except
+        except Exception as e:  # pylint: disable=broad-except
+            _LOGGER.error("Error connecting: %s", e)
             pass
         return False
 

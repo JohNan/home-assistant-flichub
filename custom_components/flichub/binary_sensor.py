@@ -2,17 +2,17 @@
 import logging
 
 from homeassistant.components.binary_sensor import BinarySensorEntity, ENTITY_ID_FORMAT
-from pyflichubclient.button import FlicButton
-from pyflichubclient.event import Event
+from pyflichub.button import FlicButton
+from pyflichub.event import Event
 
 from .const import BINARY_SENSOR, UPDATE_TOPIC
 from .const import BINARY_SENSOR_DEVICE_CLASS
 from .const import DEFAULT_NAME
 from .const import DOMAIN
 from .entity import FlicHubEntity
-from ...const import PERCENTAGE
-from ...core import callback
-from ...helpers.dispatcher import async_dispatcher_connect
+from homeassistant.const import PERCENTAGE
+from homeassistant.core import callback
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 

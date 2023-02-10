@@ -19,10 +19,11 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.update_coordinator import UpdateFailed
 from pyflichub.button import FlicButton
 from pyflichub.client import FlicHubTcpClient
+from pyflichub.command import Command
 from pyflichub.event import Event
 from .api import FlicHubApiClient
-from .const import CONF_PASSWORD, CLIENT_READY_TIMEOUT, BINARY_SENSOR, UPDATE_TOPIC, EVENT_NAME, EVENT_DATA_NAME, \
-    EVENT_DATA_ADDRESS, EVENT_DATA_TYPE
+from .const import CONF_PASSWORD, CLIENT_READY_TIMEOUT, BINARY_SENSOR, EVENT_TOPIC, EVENT_NAME, EVENT_DATA_NAME, \
+    EVENT_DATA_ADDRESS, EVENT_DATA_TYPE, STATUS_TOPIC
 from .const import DOMAIN
 from .const import PLATFORMS
 from .const import STARTUP_MESSAGE
@@ -43,15 +44,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data.setdefault(DOMAIN, {})
         _LOGGER.info(STARTUP_MESSAGE)
 
-    def on_button_clicked(button: FlicButton, event: Event):
-        dispatcher_send(hass, UPDATE_TOPIC, button, event)
+    def on_event(button: FlicButton, event: Event):
+        dispatcher_send(hass, EVENT_TOPIC, button, event)
         _send_event(hass, button, event)
 
+    def on_commend(command: Command):
+        _LOGGER.debug(f"Command: {command.data}")
+        if command.command == "buttons":
+            for button in command.data:
+                dispatcher_send(hass, STATUS_TOPIC, button)
+
+
     client = FlicHubTcpClient(
-        entry.data[CONF_IP_ADDRESS],
-        entry.data[CONF_PORT],
-        asyncio.get_event_loop(),
-        event_callback=on_button_clicked
+        ip=entry.data[CONF_IP_ADDRESS],
+        port=entry.data[CONF_PORT],
+        loop=asyncio.get_event_loop(),
+        event_callback=on_event,
+        command_callback=on_commend
     )
     client_ready = asyncio.Event()
 

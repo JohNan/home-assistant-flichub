@@ -1,2 +1,2 @@
 homeassistant
-pyflichubclient
+pyflichub-tcpclient

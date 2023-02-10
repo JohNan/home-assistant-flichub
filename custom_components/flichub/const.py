@@ -9,7 +9,8 @@ ATTRIBUTION = "Data provided by http://jsonplaceholder.typicode.com/"
 ISSUE_URL = "https://github.com/JohNan/flichub/issues"
 
 CLIENT_READY_TIMEOUT = 20.0
-UPDATE_TOPIC = f"{DOMAIN}_update"
+EVENT_TOPIC = f"{DOMAIN}_event"
+STATUS_TOPIC = f"{DOMAIN}_status"
 
 # Icons
 ICON = "mdi:format-quote-close"

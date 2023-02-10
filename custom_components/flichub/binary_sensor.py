@@ -5,7 +5,7 @@ from homeassistant.components.binary_sensor import BinarySensorEntity, ENTITY_ID
 from pyflichub.button import FlicButton
 from pyflichub.event import Event
 
-from .const import BINARY_SENSOR, UPDATE_TOPIC
+from .const import BINARY_SENSOR, EVENT_TOPIC, STATUS_TOPIC
 from .const import BINARY_SENSOR_DEVICE_CLASS
 from .const import DEFAULT_NAME
 from .const import DOMAIN
@@ -61,7 +61,7 @@ class FlicHubBinarySensor(FlicHubEntity, BinarySensorEntity):
         return False
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return the state attributes."""
         return {
             "click_type": self._click_type,
@@ -75,16 +75,36 @@ class FlicHubBinarySensor(FlicHubEntity, BinarySensorEntity):
         }
 
     @callback
-    async def _async_update_callback(self, button: FlicButton, event: Event):
+    async def _async_event_callback(self, button: FlicButton, event: Event):
         """Update the entity."""
         _LOGGER.debug(f"Button {button.name} clicked: {event.action}")
         if self.serial_number == button.serial_number:
-            self._is_on = event.action == 'down'
-            self._click_type = event.action
+            if event.action == 'single':
+                self._click_type = event.action
+            elif event.action == 'double':
+                self._click_type = event.action
+
+            if event.action == 'down':
+                self._is_on = True
+            if event.action == 'hold':
+                self._click_type = event.action
+                self._is_on = True
+            if event.action == 'up':
+                self._is_on = False
+            self.async_write_ha_state()
+
+    @callback
+    async def _async_status_callback(self, button: FlicButton):
+        """Update the entity."""
+        if self.serial_number == button.serial_number:
+            self.button = button
             self.async_write_ha_state()
 
     async def async_added_to_hass(self):
         """Register callbacks."""
         async_dispatcher_connect(
-            self.hass, UPDATE_TOPIC, self._async_update_callback
+            self.hass, EVENT_TOPIC, self._async_event_callback
+        )
+        async_dispatcher_connect(
+            self.hass, STATUS_TOPIC, self._async_status_callback
         )

@@ -1,7 +1,7 @@
 """Switch platform for Flic Hub."""
 from homeassistant.components.switch import SwitchEntity
 
-from .const import DEFAULT_NAME, UPDATE_TOPIC
+from .const import DEFAULT_NAME, EVENT_TOPIC
 from .const import DOMAIN
 from .const import ICON
 from .const import SWITCH

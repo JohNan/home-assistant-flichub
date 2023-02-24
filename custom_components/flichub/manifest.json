@@ -1,8 +1,8 @@
 {
   "domain": "flichub",
   "name": "Flic Hub",
-  "documentation": "https://github.com/JohNan/flichub",
-  "issue_tracker": "https://github.com/JohNan/flichub/issues",
+  "documentation": "https://github.com/JohNan/home-assistant-flichub",
+  "issue_tracker": "https://github.com/JohNan/home-assistant-flichub/issues",
   "config_flow": false,
   "codeowners": ["@JohNan"],
   "requirements": ["pyflichub-tcpclient==0.1.0"],

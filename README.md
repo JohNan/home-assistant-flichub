@@ -24,3 +24,4 @@ Add the following to your `configuration.yaml` and restart Home Assistant
 ```
 flichub:
 ```
+Your FlicHub should automatically be discovered as a new integration

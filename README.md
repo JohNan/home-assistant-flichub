@@ -6,6 +6,8 @@
 
 Add the tcp client to Flic Hub found in this repo: https://github.com/JohNan/pyflichub-tcpclient
 
+### Install with HACS (recommended)
+Add the url to the repository as a custom integration.
 
 ## Installation
 
@@ -17,3 +19,8 @@ Add the tcp client to Flic Hub found in this repo: https://github.com/JohNan/pyf
 6. Restart Home Assistant
 7. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "Flic Hub"
 
+### Configure
+Add the following to your `configuration.yaml` and restart Home Assistant
+```
+flichub:
+```

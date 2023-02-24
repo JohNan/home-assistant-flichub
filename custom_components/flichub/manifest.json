@@ -5,7 +5,7 @@
   "issue_tracker": "https://github.com/JohNan/flichub/issues",
   "config_flow": false,
   "codeowners": ["@JohNan"],
-  "requirements": ["pyflichub-tcpclient==0.0.1"],
+  "requirements": ["pyflichub-tcpclient==0.1.0"],
   "dhcp": [
     {
       "hostname": "flichub",

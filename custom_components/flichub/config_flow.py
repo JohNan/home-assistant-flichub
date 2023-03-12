@@ -42,12 +42,6 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle a flow initialized by the user."""
         self._errors = {}
 
-        if self.ip_address is None:
-            response = await FlicHubTcpClient.discover(async_create_clientsession(self.hass))
-            if len(response) > 0:
-                self.discovered_hubs = response
-                return await self.async_step_devices(user_input)
-
         if user_input is not None:
             valid = await self._test_credentials(
                 user_input[CONF_IP_ADDRESS],
@@ -58,24 +52,6 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             self._errors["base"] = "auth"
 
         return await self._show_config_form(user_input)
-
-    async def async_step_devices(self, user_input=None):
-        if user_input is not None:
-            valid = await self._test_credentials(
-                user_input[CONF_IP_ADDRESS],
-                user_input[CONF_PORT]
-            )
-            if valid:
-                user_input[CONF_HUB_SERIAL] = next(
-                    hub for hub in self.discovered_hubs if hub['local_ip'] == user_input[CONF_IP_ADDRESS]
-                )
-                user_input[CONF_FIRMWARE_VERSION] = next(
-                    hub['serial_number'] for hub in self.discovered_hubs if hub['local_ip'] == user_input[CONF_IP_ADDRESS]
-                )
-                return await self._create_entry(user_input)
-            self._errors["base"] = "auth"
-
-        return await self._show_select_device_form(self.discovered_hubs)
 
     async def _create_entry(self, user_input):
         existing_entry = await self.async_set_unique_id(
@@ -96,20 +72,6 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_IP_ADDRESS, default=self.ip_address): str,
-                    vol.Required(CONF_PORT): str
-                }
-            ),
-            errors=self._errors,
-        )
-
-    async def _show_select_device_form(self, discovered_hubs):  # pylint: disable=unused-argument
-        """Show the configuration form to edit location data."""
-        hubs = {hub['local_ip']: f"{hub['serial_number']} ({hub['local_ip']})" for hub in discovered_hubs}
-        return self.async_show_form(
-            step_id="devices",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_IP_ADDRESS): vol.In(hubs),
                     vol.Required(CONF_PORT): str
                 }
             ),

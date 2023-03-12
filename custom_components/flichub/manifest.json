@@ -3,7 +3,7 @@
   "name": "Flic Hub",
   "documentation": "https://github.com/JohNan/home-assistant-flichub",
   "issue_tracker": "https://github.com/JohNan/home-assistant-flichub/issues",
-  "config_flow": false,
+  "config_flow": true,
   "codeowners": ["@JohNan"],
   "requirements": ["pyflichub-tcpclient==0.1.2"],
   "loggers": ["pyflichub"],

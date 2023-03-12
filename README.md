@@ -19,9 +19,6 @@ Add the url to the repository as a custom integration.
 6. Restart Home Assistant
 7. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "Flic Hub"
 
-### Configure
-Add the following to your `configuration.yaml` and restart Home Assistant
-```
-flichub:
-```
-Your FlicHub should automatically be discovered as a new integration
+### DHCP Discovery
+Your FlicHub should automatically be discovered as a new integration based on dhcp discovery. 
+If that doesn't work it can be setup manually by doing step 7 in the installation instructions

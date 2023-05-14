@@ -78,7 +78,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         raise ConfigEntryNotReady
 
     hass.data[DOMAIN][entry.entry_id] = client
-    hass.config_entries.async_setup_platforms(entry, [BINARY_SENSOR])
+    await hass.config_entries.async_forward_entry_setups(entry, [BINARY_SENSOR])
 
     entry.add_update_listener(async_reload_entry)
     return True

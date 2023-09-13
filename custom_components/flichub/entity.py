@@ -1,17 +1,18 @@
 """FlicHubEntity class"""
 from homeassistant.helpers import entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from pyflichub.button import FlicButton
 
-from .const import ATTRIBUTION
 from .const import DOMAIN
 from .const import NAME
 from .const import VERSION
 
 
-class FlicHubEntity(entity.Entity):
-    def __init__(self, client, config_entry, serial_number):
+class FlicHubEntity(CoordinatorEntity):
+    def __init__(self, coordinator, config_entry, serial_number):
+        super().__init__(coordinator)
+        self.coordinator = coordinator
         self.serial_number = serial_number
-        self.client = client
         self.config_entry = config_entry
 
     @property
@@ -29,9 +30,12 @@ class FlicHubEntity(entity.Entity):
         }
 
     @property
+    def button(self) -> FlicButton:
+        return self.coordinator.data[self.serial_number]
+
+    @property
     def extra_state_attributes(self):
         """Return the state attributes."""
         return {
-            "attribution": ATTRIBUTION,
             "integration": DOMAIN,
         }

@@ -1,18 +1,18 @@
 {
   "domain": "flichub",
   "name": "Flic Hub",
-  "documentation": "https://github.com/JohNan/home-assistant-flichub",
-  "issue_tracker": "https://github.com/JohNan/home-assistant-flichub/issues",
-  "config_flow": true,
   "codeowners": ["@JohNan"],
-  "requirements": ["pyflichub-tcpclient==0.1.4"],
-  "loggers": ["pyflichub"],
+  "config_flow": true,
   "dhcp": [
     {
       "hostname": "flichub",
       "macaddress": "76EE2A*"
     }
   ],
+  "documentation": "https://github.com/JohNan/home-assistant-flichub",
   "iot_class": "local_push",
+  "issue_tracker": "https://github.com/JohNan/home-assistant-flichub/issues",
+  "loggers": ["pyflichub"],
+  "requirements": ["pyflichub-tcpclient==0.1.4"],
   "version": "v0.0.0"
 }

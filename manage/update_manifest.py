@@ -19,7 +19,11 @@ def update_manifest():
     with open(
         f"{os.getcwd()}/custom_components/flichub/manifest.json", "w"
     ) as manifestfile:
-        manifestfile.write(json.dumps(manifest, indent=4, sort_keys=True))
+        manifestfile.write(json.dumps(manifest, indent=4, sort_keys=False))
 
+    # print output
+    print("# generated manifest.json")
+    for key, value in manifest.items():
+        print(f"{key}: {value}")
 
 update_manifest()

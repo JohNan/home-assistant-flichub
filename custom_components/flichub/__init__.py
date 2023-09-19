@@ -19,14 +19,15 @@ from pyflichub.button import FlicButton
 from pyflichub.client import FlicHubTcpClient
 from pyflichub.command import Command
 from pyflichub.event import Event
-from .const import CONF_PASSWORD, CLIENT_READY_TIMEOUT, EVENT_CLICK, EVENT_DATA_NAME, EVENT_DATA_CLICK_TYPE, \
-    EVENT_DATA_SERIAL_NUMBER
+from .const import CLIENT_READY_TIMEOUT, EVENT_CLICK, EVENT_DATA_NAME, EVENT_DATA_CLICK_TYPE, \
+    EVENT_DATA_SERIAL_NUMBER, DATA_BUTTONS, DATA_HUB
 from .const import DOMAIN
 from .const import PLATFORMS
 
 SCAN_INTERVAL = timedelta(seconds=30)
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
+
 
 @dataclass
 class FlicHubEntryData:
@@ -51,8 +52,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     def on_commend(command: Command):
         _LOGGER.debug(f"Command: {command.data}")
         if command.command == "buttons":
-            coordinator.async_set_updated_data({button.serial_number : button for button in command.data })
-
+            coordinator.async_set_updated_data(
+                {
+                    DATA_BUTTONS: {button.serial_number: button for button in command.data},
+                    DATA_HUB: coordinator.data.get(DATA_HUB, None) if coordinator.data else None
+                }
+            )
+        if command.command == "network":
+            coordinator.async_set_updated_data(
+                {
+                    DATA_BUTTONS: coordinator.data.get(DATA_BUTTONS, None) if coordinator.data else {},
+                    DATA_HUB: command.data
+                }
+            )
 
     client = FlicHubTcpClient(
         ip=entry.data[CONF_IP_ADDRESS],
@@ -65,7 +77,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     async def async_get_buttons() -> [FlicButton]:
         buttons = await client.get_buttons()
-        return {button.serial_number : button for button in buttons }
+        hub_info = await client.get_hubinfo()
+        return {
+            DATA_BUTTONS: {button.serial_number: button for button in buttons},
+            DATA_HUB: hub_info
+        }
 
     def client_connected():
         _LOGGER.debug("Connected!")
@@ -113,13 +129,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Handle removal of an entry."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    hass.data[DOMAIN][entry.entry_id].client.disconnect()
     unloaded = all(
         await asyncio.gather(
             *[
                 hass.config_entries.async_forward_entry_unload(entry, platform)
                 for platform in PLATFORMS
-                if platform in coordinator.platforms
             ]
         )
     )

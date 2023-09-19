@@ -7,12 +7,16 @@
     {
       "hostname": "flichub",
       "macaddress": "76EE2A*"
+    },
+    {
+      "hostname": "flichub",
+      "macaddress": "36B5AD*"
     }
   ],
   "documentation": "https://github.com/JohNan/home-assistant-flichub",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/JohNan/home-assistant-flichub/issues",
   "loggers": ["pyflichub"],
-  "requirements": ["pyflichub-tcpclient==0.1.4"],
+  "requirements": ["pyflichub-tcpclient==0.1.5"],
   "version": "v0.0.0"
 }

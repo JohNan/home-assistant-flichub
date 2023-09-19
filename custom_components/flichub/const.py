@@ -14,6 +14,9 @@ CLIENT_READY_TIMEOUT = 20.0
 # Icons
 ICON = "mdi:format-quote-close"
 
+DATA_BUTTONS = "buttons"
+DATA_HUB = "network"
+
 # Device classes
 BINARY_SENSOR_DEVICE_CLASS = "connectivity"
 
@@ -24,12 +27,7 @@ EVENT_DATA_NAME = "name"
 EVENT_DATA_SERIAL_NUMBER = "serial_number"
 
 # Platforms
-PLATFORMS = [Platform.BINARY_SENSOR]
-
-# Configuration and options
-CONF_ENABLED = "enabled"
-CONF_IP_ADDRESS = "username"
-CONF_PASSWORD = "password"
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR]
 
 # Defaults
 DEFAULT_NAME = DOMAIN

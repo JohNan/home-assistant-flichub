@@ -6,7 +6,7 @@ import async_timeout
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT
+from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT, CONF_NAME
 from homeassistant.core import callback
 from pyflichub.client import FlicHubTcpClient
 from .const import CLIENT_READY_TIMEOUT
@@ -63,7 +63,7 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             )
             await self.hass.config_entries.async_reload(existing_entry.entry_id)
             return self.async_abort(reason="reauth_successful")
-        return self.async_create_entry(title=user_input[CONF_IP_ADDRESS], data=user_input)
+        return self.async_create_entry(title=user_input[CONF_NAME], data=user_input)
 
     async def _show_config_form(self, user_input):  # pylint: disable=unused-argument
         """Show the configuration form to edit location data."""
@@ -71,6 +71,7 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=vol.Schema(
                 {
+                    vol.Required(CONF_NAME): str,
                     vol.Required(CONF_IP_ADDRESS, default=self.ip_address): str,
                     vol.Required(CONF_PORT): str
                 }

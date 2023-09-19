@@ -5,6 +5,7 @@
         "title": "Flic Hub",
         "description": "If you need help with the configuration have a look here: https://github.com/JohNan/flichub",
         "data": {
+          "name": "Name",
           "ip_address": "IP Address",
           "port": "Port"
         }
@@ -31,8 +32,7 @@
       "user": {
         "data": {
           "binary_sensor": "Binary sensor enabled",
-          "sensor": "Sensor enabled",
-          "switch": "Switch enabled"
+          "sensor": "Sensor enabled"
         }
       }
     }

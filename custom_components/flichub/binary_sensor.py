@@ -177,6 +177,11 @@ class FlicHubButtonConnectedBinarySensor(FlicHubButtonEntity, BinarySensorEntity
         """Return a unique ID to use for this entity."""
         return f"{self.serial_number}-connected"
 
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return True
+
 
 class FlicHubButtonPassiveBinarySensor(FlicHubButtonEntity, BinarySensorEntity):
     """flichub sensor class."""

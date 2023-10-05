@@ -26,6 +26,7 @@ async def async_setup_entry(hass, entry, async_add_devices):
     devices = []
     for serial_number, button in buttons.items():
         devices.append(FlicHubButtonBatterySensor(data_entry.coordinator, entry, button, flic_hub))
+        devices.append(FlicHubButtonBatteryTimestampSensor(data_entry.coordinator, entry, button, flic_hub))
     async_add_devices(devices)
 
 
@@ -48,3 +49,26 @@ class FlicHubButtonBatterySensor(FlicHubButtonEntity, SensorEntity):
     def unique_id(self):
         """Return a unique ID to use for this entity."""
         return f"{self.serial_number}-battery"
+
+class FlicHubButtonBatteryTimestampSensor(FlicHubButtonEntity, SensorEntity):
+    """flichub binary_sensor class."""
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator, config_entry, button: FlicButton, flic_hub: FlicHubInfo):
+        super().__init__(coordinator, config_entry, button.serial_number, flic_hub)
+
+    @property
+    def native_value(self):
+        """Return the state of the sensor."""
+        return self.button.battery_timestamp
+
+    @property
+    def unique_id(self):
+        """Return a unique ID to use for this entity."""
+        return f"{self.serial_number}-battery-timestamp"
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return True

@@ -3,19 +3,19 @@
     "step": {
       "user": {
         "title": "Flic Hub",
-        "description": "If you need help with the configuration have a look here: https://github.com/JohNan/flichub",
+        "description": "If you need help with the configuration have a look here: https://github.com/JohNan/home-assistant-flichub",
         "data": {
-          "name": "Name",
+          "name": "Name your device",
           "ip_address": "IP Address",
-          "port": "Port"
+          "port": "Port (default: 8124)"
         }
       },
       "devices": {
         "title": "Flic Hub",
-        "description": "If you need help with the configuration have a look here: https://github.com/JohNan/flichub",
+        "description": "If you need help with the configuration have a look here: https://github.com/JohNan/home-assistant-flichub",
         "data": {
           "ip_address": "Discovered devices",
-          "port": "Port"
+          "port": "Port (default: 8124)"
         }
       }
     },

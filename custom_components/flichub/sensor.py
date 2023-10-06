@@ -1,5 +1,7 @@
 """Binary sensor platform for Flic Hub."""
 import logging
+from homeassistant.util.dt import get_time_zone, as_utc
+
 from homeassistant.helpers.device_registry import format_mac
 
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -50,6 +52,7 @@ class FlicHubButtonBatterySensor(FlicHubButtonEntity, SensorEntity):
         """Return a unique ID to use for this entity."""
         return f"{self.serial_number}-battery"
 
+
 class FlicHubButtonBatteryTimestampSensor(FlicHubButtonEntity, SensorEntity):
     """flichub binary_sensor class."""
     _attr_device_class = SensorDeviceClass.TIMESTAMP
@@ -61,7 +64,7 @@ class FlicHubButtonBatteryTimestampSensor(FlicHubButtonEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        return self.button.battery_timestamp
+        return as_utc(self.button.battery_timestamp) if self.button.battery_timestamp else None
 
     @property
     def unique_id(self):

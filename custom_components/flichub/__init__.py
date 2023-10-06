@@ -43,11 +43,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data.setdefault(DOMAIN, {})
 
     def on_event(button: FlicButton, event: Event):
-        hass.bus.fire(EVENT_CLICK, {
-            EVENT_DATA_SERIAL_NUMBER: button.serial_number,
-            EVENT_DATA_NAME: button.name,
-            EVENT_DATA_CLICK_TYPE: event.action
-        })
+        if event.event == "button":
+            hass.bus.fire(EVENT_CLICK, {
+                EVENT_DATA_SERIAL_NUMBER: button.serial_number,
+                EVENT_DATA_NAME: button.name,
+                EVENT_DATA_CLICK_TYPE: event.action
+            })
+        if event.event == "buttonReady":
+            coordinator.async_refresh()
 
     def on_commend(command: Command):
         _LOGGER.debug(f"Command: {command.data}")

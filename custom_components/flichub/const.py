@@ -7,8 +7,6 @@ DOMAIN = "flichub"
 DOMAIN_DATA = f"{DOMAIN}_data"
 VERSION = "0.0.0"
 
-ISSUE_URL = "https://github.com/JohNan/flichub/issues"
-
 CLIENT_READY_TIMEOUT = 20.0
 
 # Icons

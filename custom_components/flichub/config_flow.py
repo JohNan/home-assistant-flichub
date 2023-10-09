@@ -1,18 +1,17 @@
 """Adds config flow for Flic Hub."""
+import async_timeout
 import asyncio
 import logging
-
-import async_timeout
 import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT, CONF_NAME
 from homeassistant.core import callback
+from homeassistant.helpers.device_registry import format_mac
 from pyflichub.client import FlicHubTcpClient
 from .const import CLIENT_READY_TIMEOUT
 from .const import DOMAIN
 from .const import PLATFORMS
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 
@@ -25,17 +24,20 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     def __init__(self):
         """Initialize."""
-        self.ip_address = None
+        self._ip_address = None
+        self._mac_address = None
         self._errors = {}
-        self.discovered_hubs = None
-        self.task_discover_devices = None
 
     async def async_step_dhcp(self, discovery_info):
         """Handle dhcp discovery."""
-        self.ip_address = discovery_info.ip
-        self._async_abort_entries_match({CONF_IP_ADDRESS: self.ip_address})
-        self.ip_address = discovery_info.ip
-        self.context["title_placeholders"] = {CONF_IP_ADDRESS: self.ip_address}
+        self._ip_address = discovery_info.ip
+        self._mac_address = discovery_info.macaddress
+
+        self._async_abort_entries_match({CONF_IP_ADDRESS: self._ip_address})
+        await self.async_set_unique_id(format_mac(self._mac_address))
+        self._abort_if_unique_id_configured()
+
+        self.context["title_placeholders"] = {CONF_IP_ADDRESS: self._ip_address}
         return await self.async_step_user()
 
     async def async_step_user(self, user_input=None):
@@ -55,8 +57,16 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _create_entry(self, user_input):
         existing_entry = await self.async_set_unique_id(
-            user_input[CONF_IP_ADDRESS]
+            format_mac(self._mac_address)
         )
+
+        self._abort_if_unique_id_configured(
+            updates={
+                CONF_IP_ADDRESS: user_input[CONF_IP_ADDRESS],
+                CONF_PORT: user_input[CONF_PORT],
+            }
+        )
+
         if existing_entry:
             self.hass.config_entries.async_update_entry(
                 existing_entry, data=user_input
@@ -72,8 +82,8 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_NAME): str,
-                    vol.Required(CONF_IP_ADDRESS, default=self.ip_address): str,
-                    vol.Required(CONF_PORT): str
+                    vol.Required(CONF_IP_ADDRESS, default=self._ip_address): str,
+                    vol.Required(CONF_PORT, default=8124): str
                 }
             ),
             errors=self._errors,

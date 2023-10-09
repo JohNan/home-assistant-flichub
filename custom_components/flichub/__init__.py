@@ -50,7 +50,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 EVENT_DATA_CLICK_TYPE: event.action
             })
         if event.event == "buttonReady":
-            coordinator.async_refresh()
+            hass.async_create_task(coordinator.async_refresh())
 
     def on_commend(command: Command):
         _LOGGER.debug(f"Command: {command.data}")

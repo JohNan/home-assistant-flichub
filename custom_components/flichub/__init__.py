@@ -9,6 +9,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import timedelta
+from homeassistant.helpers.issue_registry import async_create_issue, IssueSeverity
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT, EVENT_HOMEASSISTANT_STOP
@@ -16,11 +17,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from pyflichub.button import FlicButton
-from pyflichub.client import FlicHubTcpClient
+from pyflichub.client import FlicHubTcpClient, ServerCommand
 from pyflichub.command import Command
 from pyflichub.event import Event
 from .const import CLIENT_READY_TIMEOUT, EVENT_CLICK, EVENT_DATA_NAME, EVENT_DATA_CLICK_TYPE, \
-    EVENT_DATA_SERIAL_NUMBER, DATA_BUTTONS, DATA_HUB
+    EVENT_DATA_SERIAL_NUMBER, DATA_BUTTONS, DATA_HUB, REQUIRED_SERVER_VERSION, DEFAULT_SCAN_INTERVAL
 from .const import DOMAIN
 from .const import PLATFORMS
 
@@ -34,7 +35,7 @@ class FlicHubEntryData:
     """Class for sharing data within the Nanoleaf integration."""
 
     client: FlicHubTcpClient
-    coordinator: DataUpdateCoordinator[None]
+    coordinator: DataUpdateCoordinator[dict]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
@@ -43,6 +44,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data.setdefault(DOMAIN, {})
 
     def on_event(button: FlicButton, event: Event):
+        _LOGGER.debug(f"Event: {event}")
         if event.event == "button":
             hass.bus.fire(EVENT_CLICK, {
                 EVENT_DATA_SERIAL_NUMBER: button.serial_number,
@@ -52,20 +54,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         if event.event == "buttonReady":
             hass.async_create_task(coordinator.async_refresh())
 
-    def on_commend(command: Command):
-        _LOGGER.debug(f"Command: {command.data}")
-        if command.command == "buttons":
+    def on_command(command: Command):
+        _LOGGER.debug(f"Command: {command.command}, data: {command.data}")
+        if command is None:
+            return
+        if command.command == ServerCommand.SERVER_INFO:
+            hub_version = command.data.version
+            if hub_version != REQUIRED_SERVER_VERSION:
+                async_create_issue(
+                    hass,
+                    DOMAIN,
+                    f"invalid_server_version_{entry.entry_id}",
+                    is_fixable=False,
+                    severity=IssueSeverity.ERROR,
+                    translation_key=f"{DOMAIN}_invalid_server_version",
+                    translation_placeholders={
+                        "required_version": REQUIRED_SERVER_VERSION,
+                        "flichub_version": hub_version,
+                    },
+                )
+        if command.command == ServerCommand.BUTTONS:
             coordinator.async_set_updated_data(
                 {
                     DATA_BUTTONS: {button.serial_number: button for button in command.data},
                     DATA_HUB: coordinator.data.get(DATA_HUB, None) if coordinator.data else None
-                }
-            )
-        if command.command == "network":
-            coordinator.async_set_updated_data(
-                {
-                    DATA_BUTTONS: coordinator.data.get(DATA_BUTTONS, None) if coordinator.data else {},
-                    DATA_HUB: command.data
                 }
             )
 
@@ -74,32 +86,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         port=entry.data[CONF_PORT],
         loop=asyncio.get_event_loop(),
         event_callback=on_event,
-        command_callback=on_commend
+        command_callback=on_command
     )
     client_ready = asyncio.Event()
 
-    async def async_get_buttons() -> [FlicButton]:
+    async def async_update() -> dict:
         buttons = await client.get_buttons()
         hub_info = await client.get_hubinfo()
         return {
-            DATA_BUTTONS: {button.serial_number: button for button in buttons},
-            DATA_HUB: hub_info
+            DATA_BUTTONS: {button.serial_number: button for button in buttons} if buttons is not None else {},
+            DATA_HUB: hub_info if hub_info is not None else {}
         }
 
-    def client_connected():
+    async def client_connected():
         _LOGGER.debug("Connected!")
         client_ready.set()
+        await client.get_server_info()
 
-    def client_disconnected():
+    async def client_disconnected():
         _LOGGER.debug("Disconnected!")
-
-    client.on_connected = client_connected
-    client.on_disconnected = client_disconnected
-
-    asyncio.create_task(client.async_connect())
 
     def stop_client(event):
         client.disconnect()
+
+    client.async_on_connected = client_connected
+    client.async_on_disconnected = client_disconnected
+
+    await client.async_connect()
 
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, stop_client)
 
@@ -107,14 +120,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         with async_timeout.timeout(CLIENT_READY_TIMEOUT):
             await client_ready.wait()
     except asyncio.TimeoutError:
-        print(f"Client not connected after {CLIENT_READY_TIMEOUT} secs so continuing with setup")
+        _LOGGER.error(f"Client not connected after {CLIENT_READY_TIMEOUT} secs. Discontinuing setup")
+        client.disconnect()
         raise ConfigEntryNotReady
 
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
         name=entry.title,
-        update_method=async_get_buttons
+        update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL),
+        update_method=async_update
     )
 
     await coordinator.async_config_entry_first_refresh()

@@ -1,4 +1,6 @@
 """Adds config flow for Flic Hub."""
+from typing import Any
+
 import async_timeout
 import asyncio
 import logging
@@ -40,7 +42,7 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self.context["title_placeholders"] = {CONF_IP_ADDRESS: self._ip_address}
         return await self.async_step_user()
 
-    async def async_step_user(self, user_input=None):
+    async def async_step_user(self, user_input: dict[str, Any] | None = None):
         """Handle a flow initialized by the user."""
         self._errors = {}
 
@@ -51,7 +53,7 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             )
             if valid:
                 return await self._create_entry(user_input)
-            self._errors["base"] = "auth"
+            self._errors["base"] = "cannot_connect"
 
         return await self._show_config_form(user_input)
 
@@ -75,15 +77,28 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="reauth_successful")
         return self.async_create_entry(title=user_input[CONF_NAME], data=user_input)
 
-    async def _show_config_form(self, user_input):  # pylint: disable=unused-argument
+    async def _show_config_form(self, user_input: dict[str, Any] | None = None):
         """Show the configuration form to edit location data."""
+        if user_input is None:
+            return self.async_show_form(
+                step_id="user",
+                data_schema=vol.Schema(
+                    {
+                        vol.Required(CONF_NAME): str,
+                        vol.Required(CONF_IP_ADDRESS, default=self._ip_address): str,
+                        vol.Required(CONF_PORT, default="8124"): str
+                    }
+                ),
+                errors=self._errors,
+            )
+
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_NAME): str,
-                    vol.Required(CONF_IP_ADDRESS, default=self._ip_address): str,
-                    vol.Required(CONF_PORT, default=8124): str
+                    vol.Required(CONF_NAME, default=user_input.get(CONF_NAME, None)): str,
+                    vol.Required(CONF_IP_ADDRESS, default=user_input.get(CONF_IP_ADDRESS, self._ip_address)): str,
+                    vol.Required(CONF_PORT, default=user_input.get(CONF_PORT, "8124")): str
                 }
             ),
             errors=self._errors,
@@ -91,18 +106,18 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _test_credentials(self, ip, port):
         """Return true if credentials is valid."""
+        client = FlicHubTcpClient(ip, port, asyncio.get_event_loop())
         try:
-            client = FlicHubTcpClient(ip, port, asyncio.get_event_loop())
             client_ready = asyncio.Event()
 
-            def client_connected():
+            async def client_connected():
                 client_ready.set()
 
-            def client_disconnected():
+            async def client_disconnected():
                 _LOGGER.debug("Disconnected")
 
-            client.on_connected = client_connected
-            client.on_disconnected = client_disconnected
+            client.async_on_connected = client_connected
+            client.async_on_disconnected = client_disconnected
 
             asyncio.create_task(client.async_connect())
 
@@ -112,7 +127,8 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             client.disconnect()
             return True
         except Exception as e:  # pylint: disable=broad-except
-            _LOGGER.error("Error connecting: %s", e)
+            _LOGGER.error("Error connecting", exc_info=e)
+            client.disconnect()
             pass
         return False
 

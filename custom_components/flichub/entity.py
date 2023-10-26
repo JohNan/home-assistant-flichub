@@ -74,14 +74,15 @@ class FlicHubEntity(CoordinatorEntity):
         super().__init__(coordinator)
         self.coordinator = coordinator
         self._flic_hub = flic_hub
+        self._ip_address = config_entry.data[CONF_IP_ADDRESS]
         self.config_entry = config_entry
 
     @property
     def mac_address(self):
         """Return a unique ID to use for this entity."""
-        if self.flic_hub.has_ethernet():
+        if self.flic_hub.has_ethernet() and self._ip_address == self.flic_hub.ethernet.ip:
             return format_mac(self.flic_hub.ethernet.mac)
-        if self.flic_hub.has_wifi():
+        if self.flic_hub.has_wifi() and self._ip_address == self.flic_hub.wifi.ip:
             return format_mac(self.flic_hub.wifi.mac)
 
     @property
@@ -89,16 +90,17 @@ class FlicHubEntity(CoordinatorEntity):
         identifiers = set()
         connections = set()
 
-        if self.flic_hub.has_ethernet():
+        if self.flic_hub.has_ethernet() and self._ip_address == self.flic_hub.ethernet.ip:
             identifiers.add((DOMAIN, format_mac(self.flic_hub.ethernet.mac)))
             connections.add((DOMAIN, format_mac(self.flic_hub.ethernet.mac)))
-        if self.flic_hub.has_wifi():
+        if self.flic_hub.has_wifi() and self._ip_address == self.flic_hub.wifi.ip:
             identifiers.add((DOMAIN, format_mac(self.flic_hub.wifi.mac)))
             connections.add((DOMAIN, format_mac(self.flic_hub.wifi.mac)))
 
         return {
             "identifiers": identifiers,
             "name": "FlicHub",
+            "model": "LR",
             "connections": connections,
             "manufacturer": "Flic"
         }

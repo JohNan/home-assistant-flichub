@@ -1,4 +1,5 @@
 """Adds config flow for Flic Hub."""
+from homeassistant.data_entry_flow import FlowResult
 from typing import Any
 
 import async_timeout
@@ -30,34 +31,39 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._mac_address = None
         self._errors = {}
 
-    async def async_step_dhcp(self, discovery_info):
+    async def async_step_dhcp(self, discovery_info) -> FlowResult:
         """Handle dhcp discovery."""
         self._ip_address = discovery_info.ip
         self._mac_address = discovery_info.macaddress
 
         self._async_abort_entries_match({CONF_IP_ADDRESS: self._ip_address})
         await self.async_set_unique_id(format_mac(self._mac_address))
-        self._abort_if_unique_id_configured()
+        self._abort_if_unique_id_configured(
+            updates={
+                CONF_IP_ADDRESS: self._ip_address
+            }
+        )
 
         self.context["title_placeholders"] = {CONF_IP_ADDRESS: self._ip_address}
         return await self.async_step_user()
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None):
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle a flow initialized by the user."""
         self._errors = {}
 
         if user_input is not None:
-            valid = await self._test_credentials(
+            valid, mac = await self._test_credentials(
                 user_input[CONF_IP_ADDRESS],
                 user_input[CONF_PORT]
             )
             if valid:
+                self._mac_address = mac
                 return await self._create_entry(user_input)
             self._errors["base"] = "cannot_connect"
 
         return await self._show_config_form(user_input)
 
-    async def _create_entry(self, user_input):
+    async def _create_entry(self, user_input) -> FlowResult:
         existing_entry = await self.async_set_unique_id(
             format_mac(self._mac_address)
         )
@@ -77,7 +83,7 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="reauth_successful")
         return self.async_create_entry(title=user_input[CONF_NAME], data=user_input)
 
-    async def _show_config_form(self, user_input: dict[str, Any] | None = None):
+    async def _show_config_form(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Show the configuration form to edit location data."""
         if user_input is None:
             return self.async_show_form(
@@ -104,7 +110,8 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             errors=self._errors,
         )
 
-    async def _test_credentials(self, ip, port):
+    @staticmethod
+    async def _test_credentials(ip, port) -> tuple[bool, str | None]:
         """Return true if credentials is valid."""
         client = FlicHubTcpClient(ip, port, asyncio.get_event_loop())
         try:
@@ -124,13 +131,22 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             with async_timeout.timeout(CLIENT_READY_TIMEOUT):
                 await client_ready.wait()
 
+            hub_info = await client.get_hubinfo()
+            if hub_info.has_wifi() and hub_info.wifi.ip == ip:
+                client.disconnect()
+                return True, hub_info.wifi.mac
+
+            if hub_info.has_ethernet() and hub_info.ethernet.ip == ip:
+                client.disconnect()
+                return True, hub_info.ethernet.mac
+
             client.disconnect()
-            return True
+            return False, None
         except Exception as e:  # pylint: disable=broad-except
             _LOGGER.error("Error connecting", exc_info=e)
             client.disconnect()
             pass
-        return False
+        return False, None
 
     @staticmethod
     @callback

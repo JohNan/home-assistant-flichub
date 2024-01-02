@@ -137,7 +137,7 @@ class FlicHubButtonConnectedBinarySensor(FlicHubButtonEntity, BinarySensorEntity
 
 class FlicHubButtonPassiveBinarySensor(FlicHubButtonEntity, BinarySensorEntity):
     """flichub sensor class."""
-    _attr_entity_category = EntityCategory.CONFIG
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_name = "Passive Mode"
 
     def __init__(self, coordinator, config_entry, button: FlicButton, flic_hub: FlicHubInfo):
@@ -152,7 +152,7 @@ class FlicHubButtonPassiveBinarySensor(FlicHubButtonEntity, BinarySensorEntity):
 
 class FlicHubButtonActiveDisconnectBinarySensor(FlicHubButtonEntity, BinarySensorEntity):
     """flichub sensor class."""
-    _attr_entity_category = EntityCategory.CONFIG
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_name = "Active Disconnect"
 
     def __init__(self, coordinator, config_entry, button: FlicButton, flic_hub: FlicHubInfo):

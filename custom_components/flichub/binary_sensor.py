@@ -211,4 +211,4 @@ class FlicHubButtonBinarySensor(FlicHubButtonEntity, BinarySensorEntity):
             self._is_on = True
         if click_type == 'up':
             self._is_on = False
-        self.async_write_ha_state()
+        self.schedule_update_ha_state()

@@ -27,7 +27,7 @@ EVENT_DATA_NAME = "name"
 EVENT_DATA_SERIAL_NUMBER = "serial_number"
 
 # Platforms
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR]
+PLATFORMS = [str(Platform.BINARY_SENSOR), str(Platform.SENSOR)]
 
 # Defaults
 DEFAULT_NAME = DOMAIN

@@ -128,7 +128,7 @@ class FlicHubFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
             asyncio.create_task(client.async_connect())
 
-            with async_timeout.timeout(CLIENT_READY_TIMEOUT):
+            async with async_timeout.timeout(CLIENT_READY_TIMEOUT):
                 await client_ready.wait()
 
             hub_info = await client.get_hubinfo()

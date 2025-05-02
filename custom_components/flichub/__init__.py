@@ -117,7 +117,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, stop_client)
 
     try:
-        with async_timeout.timeout(CLIENT_READY_TIMEOUT):
+        async with async_timeout.timeout(CLIENT_READY_TIMEOUT):
             await client_ready.wait()
     except asyncio.TimeoutError:
         _LOGGER.error(f"Client not connected after {CLIENT_READY_TIMEOUT} secs. Discontinuing setup")

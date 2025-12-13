@@ -16,6 +16,8 @@ from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT, EVENT_HOMEASSISTANT_
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, format_mac
 from pyflichub.button import FlicButton
 from pyflichub.client import FlicHubTcpClient, ServerCommand
 from pyflichub.command import Command
@@ -133,6 +135,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
 
     await coordinator.async_config_entry_first_refresh()
+
+    device_registry = dr.async_get(hass)
+    hub_info = coordinator.data.get(DATA_HUB)
+    ip_address = entry.data.get(CONF_IP_ADDRESS)
+    if hub_info and ip_address:
+        connections = set()
+        identifiers = set()
+        if hub_info.has_ethernet() and ip_address == hub_info.ethernet.ip:
+            mac_address = format_mac(hub_info.ethernet.mac)
+            connections.add((CONNECTION_NETWORK_MAC, mac_address))
+            identifiers.add((DOMAIN, mac_address))
+        if hub_info.has_wifi() and ip_address == hub_info.wifi.ip:
+            mac_address = format_mac(hub_info.wifi.mac)
+            connections.add((CONNECTION_NETWORK_MAC, mac_address))
+            identifiers.add((DOMAIN, mac_address))
+        device_registry.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            connections=connections,
+            identifiers=identifiers,
+            manufacturer="Flic",
+            name="Flic Hub",
+            model="LR",
+        )
 
     hass.data[DOMAIN][entry.entry_id] = FlicHubEntryData(
         client=client,

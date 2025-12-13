@@ -85,25 +85,6 @@ class FlicHubEntity(CoordinatorEntity):
         if self.flic_hub.has_wifi() and self._ip_address == self.flic_hub.wifi.ip:
             return format_mac(self.flic_hub.wifi.mac)
 
-    @property
-    def device_info(self):
-        identifiers = set()
-        connections = set()
-
-        if self.flic_hub.has_ethernet() and self._ip_address == self.flic_hub.ethernet.ip:
-            identifiers.add((DOMAIN, format_mac(self.flic_hub.ethernet.mac)))
-            connections.add((DOMAIN, format_mac(self.flic_hub.ethernet.mac)))
-        if self.flic_hub.has_wifi() and self._ip_address == self.flic_hub.wifi.ip:
-            identifiers.add((DOMAIN, format_mac(self.flic_hub.wifi.mac)))
-            connections.add((DOMAIN, format_mac(self.flic_hub.wifi.mac)))
-
-        return {
-            "identifiers": identifiers,
-            "name": "FlicHub",
-            "model": "LR",
-            "connections": connections,
-            "manufacturer": "Flic"
-        }
 
     @property
     def flic_hub(self) -> FlicHubInfo:

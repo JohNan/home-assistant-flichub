@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Flic Hub",
-        "description": "If you need help with the configuration have a look here: https://github.com/JohNan/home-assistant-flichub. Default port is 8124",
+        "description": "If you need help with the configuration have a look at the documentation. Default port is 8124",
         "data": {
           "name": "Name your device",
           "ip_address": "[%key:common::config_flow::data::ip%]",
@@ -32,7 +32,7 @@
   "issues": {
     "flichub_invalid_server_version": {
       "title": "Invalid server version on FlicHub",
-      "description": "The TCP server on the FlicHub is running version `{flichub_version}` which does not match the required version `{required_version}`. Please go to https://github.com/JohNan/pyflichub-tcpclient and follow the instructions"
+      "description": "The TCP server on the FlicHub is running version `{flichub_version}` which does not match the required version `{required_version}`. Please update the TCP server on the FlicHub."
     }
   }
 }

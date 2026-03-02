@@ -1,0 +1,33 @@
+send_virtual_device_update_state:
+  name: Send Virtual Device Update State
+  description: Send a state update to a Flic Twist virtual device.
+  fields:
+    config_entry_id:
+      name: Config Entry ID
+      description: The ID of the Flic Hub config entry. If not provided, the first available hub will be used.
+      example: "71f76016e300fc773f32420bb5982ab7"
+      required: false
+      selector:
+        config_entry:
+          integration: flichub
+    dimmable_type:
+      name: Dimmable Type
+      description: The type of dimmable device (e.g., 'light').
+      example: "light"
+      required: true
+      selector:
+        text:
+    virtual_device_id:
+      name: Virtual Device ID
+      description: The ID of the virtual device to update.
+      example: "my_light_1"
+      required: true
+      selector:
+        text:
+    values:
+      name: Values
+      description: The values to send to the virtual device.
+      example: '{"brightness": 100, "on": true}'
+      required: true
+      selector:
+        object:

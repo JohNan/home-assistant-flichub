@@ -23,7 +23,9 @@ from pyflichub.client import FlicHubTcpClient, ServerCommand
 from pyflichub.command import Command
 from pyflichub.event import Event
 from .const import CLIENT_READY_TIMEOUT, EVENT_CLICK, EVENT_DATA_NAME, EVENT_DATA_CLICK_TYPE, \
-    EVENT_DATA_SERIAL_NUMBER, DATA_BUTTONS, DATA_HUB, REQUIRED_SERVER_VERSION, DEFAULT_SCAN_INTERVAL
+    EVENT_DATA_SERIAL_NUMBER, DATA_BUTTONS, DATA_HUB, REQUIRED_SERVER_VERSION, DEFAULT_SCAN_INTERVAL, \
+    EVENT_ACTION_MESSAGE, EVENT_VIRTUAL_DEVICE_UPDATE, EVENT_DATA_ACTION, \
+    EVENT_DATA_META_DATA, EVENT_DATA_VALUES
 from .const import DOMAIN
 from .const import PLATFORMS
 
@@ -55,6 +57,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             })
         if event.event == "buttonReady":
             hass.async_create_task(coordinator.async_refresh())
+        if event.event == "actionMessage":
+            hass.bus.fire(EVENT_ACTION_MESSAGE, {
+                EVENT_DATA_ACTION: event.action
+            })
+        if event.event == "virtualDeviceUpdate":
+            hass.bus.fire(EVENT_VIRTUAL_DEVICE_UPDATE, {
+                EVENT_DATA_META_DATA: event.meta_data,
+                EVENT_DATA_VALUES: event.values
+            })
 
     def on_command(command: Command):
         _LOGGER.debug(f"Command: {command.command}, data: {command.data}")
@@ -167,6 +178,35 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.add_update_listener(async_reload_entry)
+
+    async def send_virtual_device_update_state(call):
+        """Service to send virtual device update state to Flic Hub."""
+        entry_id = call.data.get("config_entry_id")
+        if entry_id is None:
+            # If not provided, try to use the first available config entry
+            if len(hass.data[DOMAIN]) > 0:
+                entry_id = list(hass.data[DOMAIN].keys())[0]
+            else:
+                _LOGGER.error("No flichub config entries found.")
+                return
+
+        if entry_id not in hass.data[DOMAIN]:
+            _LOGGER.error(f"FlicHub config entry {entry_id} not found.")
+            return
+
+        client = hass.data[DOMAIN][entry_id].client
+        dimmable_type = call.data.get("dimmable_type")
+        virtual_device_id = call.data.get("virtual_device_id")
+        values = call.data.get("values", {})
+
+        client.send_virtual_device_update_state(dimmable_type, virtual_device_id, values)
+
+    hass.services.async_register(
+        DOMAIN,
+        "send_virtual_device_update_state",
+        send_virtual_device_update_state,
+    )
+
     return True
 
 

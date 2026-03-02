@@ -176,7 +176,7 @@ class FlicHubOptionsFlowHandler(config_entries.OptionsFlow):
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Required(x, default=self.options.get(x, True)): bool
+                    vol.Required(x.value, default=self.options.get(x.value, True)): bool
                     for x in sorted(PLATFORMS)
                 }
             ),

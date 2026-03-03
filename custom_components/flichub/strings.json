@@ -34,5 +34,15 @@
       "title": "Invalid server version on FlicHub",
       "description": "The TCP server on the FlicHub is running version `{flichub_version}` which does not match the required version `{required_version}`. Please update the TCP server on the FlicHub."
     }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "single": "Single click",
+      "double": "Double click",
+      "hold": "Hold",
+      "down": "Button down",
+      "up": "Button up",
+      "double_hold": "Double click and hold"
+    }
   }
 }

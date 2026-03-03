@@ -199,7 +199,7 @@ class FlicHubButtonBinarySensor(FlicHubButtonEntity, BinarySensorEntity):
         name = event.data[EVENT_DATA_NAME]
         click_type: Event = event.data[EVENT_DATA_CLICK_TYPE]
         _LOGGER.debug(f"Button {name} clicked: {click_type}")
-        if click_type in ['single', 'double', 'hold', 'idle']:
+        if click_type in ['single', 'double', 'hold', 'double_hold', 'idle']:
             self._click_type = click_type
 
         if click_type == 'down':

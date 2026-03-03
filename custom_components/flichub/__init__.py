@@ -47,6 +47,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     if hass.data.get(DOMAIN) is None:
         hass.data.setdefault(DOMAIN, {})
 
+    def update_device_registry_names(buttons):
+        device_registry = dr.async_get(hass)
+        for button in buttons:
+            device = device_registry.async_get_device(identifiers={(DOMAIN, button.serial_number)})
+            if device and device.name != button.name:
+                device_registry.async_update_device(device.id, name=button.name)
+
     def on_event(button: FlicButton, event: Event):
         _LOGGER.debug(f"Event: {event}")
         if event.event == "button":
@@ -87,6 +94,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     },
                 )
         if command.command == ServerCommand.BUTTONS:
+            update_device_registry_names(command.data)
             coordinator.async_set_updated_data(
                 {
                     DATA_BUTTONS: {button.serial_number: button for button in command.data},
@@ -106,6 +114,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     async def async_update() -> dict:
         buttons = await client.get_buttons()
         hub_info = await client.get_hubinfo()
+        if buttons is not None:
+            update_device_registry_names(buttons)
         return {
             DATA_BUTTONS: {button.serial_number: button for button in buttons} if buttons is not None else {},
             DATA_HUB: hub_info if hub_info is not None else {}

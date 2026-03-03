@@ -62,7 +62,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 EVENT_DATA_NAME: button.name,
                 EVENT_DATA_CLICK_TYPE: event.action
             })
-        if event.event == "buttonReady":
+        if event.event in ["buttonReady", "buttonAdded", "buttonDeleted", "buttonConnected", "buttonDisconnected"]:
             hass.async_create_task(coordinator.async_refresh())
         if event.event == "actionMessage":
             hass.bus.fire(EVENT_ACTION_MESSAGE, {

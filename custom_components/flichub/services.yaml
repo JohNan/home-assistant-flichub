@@ -31,3 +31,23 @@ send_virtual_device_update_state:
       required: true
       selector:
         object:
+play_ir:
+  name: Play IR
+  description: Play an Infrared (IR) signal via a Flic Hub.
+  fields:
+    config_entry_id:
+      name: Config Entry ID
+      description: The ID of the Flic Hub config entry. If not provided, the first available hub will be used.
+      example: "71f76016e300fc773f32420bb5982ab7"
+      required: false
+      selector:
+        config_entry:
+          integration: flichub
+    signal_id:
+      name: Signal ID
+      description: The ID of the IR signal to play.
+      example: "2"
+      required: true
+      selector:
+        number:
+          mode: box

@@ -207,6 +207,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         send_virtual_device_update_state,
     )
 
+    async def play_ir(call):
+        """Service to play IR signal via Flic Hub."""
+        entry_id = call.data.get("config_entry_id")
+        if entry_id is None:
+            # If not provided, try to use the first available config entry
+            if len(hass.data[DOMAIN]) > 0:
+                entry_id = list(hass.data[DOMAIN].keys())[0]
+            else:
+                _LOGGER.error("No flichub config entries found.")
+                return
+
+        if entry_id not in hass.data[DOMAIN]:
+            _LOGGER.error(f"FlicHub config entry {entry_id} not found.")
+            return
+
+        client = hass.data[DOMAIN][entry_id].client
+        signal_id = call.data.get("signal_id")
+
+        await client.play_ir(int(signal_id))
+
+    hass.services.async_register(
+        DOMAIN,
+        "play_ir",
+        play_ir,
+    )
+
     return True
 
 

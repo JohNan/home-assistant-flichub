@@ -11,6 +11,7 @@ from homeassistant.const import CONF_IP_ADDRESS, EntityCategory, CONF_NAME, PERC
 from homeassistant.components.binary_sensor import ENTITY_ID_FORMAT
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from pyflichub.button import FlicButton
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from pyflichub.flichub import FlicHubInfo
 from . import FlicHubEntryData
 from .const import DEFAULT_NAME, DATA_BUTTONS, DATA_HUB
@@ -30,6 +31,18 @@ async def async_setup_entry(hass, entry, async_add_devices):
         devices.append(FlicHubButtonBatterySensor(data_entry.coordinator, entry, button, flic_hub))
         devices.append(FlicHubButtonBatteryTimestampSensor(data_entry.coordinator, entry, button, flic_hub))
     async_add_devices(devices)
+
+    def async_add_button(serial_number):
+        button = data_entry.coordinator.data[DATA_BUTTONS].get(serial_number)
+        if button:
+            async_add_devices([
+                FlicHubButtonBatterySensor(data_entry.coordinator, entry, button, flic_hub),
+                FlicHubButtonBatteryTimestampSensor(data_entry.coordinator, entry, button, flic_hub)
+            ])
+
+    entry.async_on_unload(
+        async_dispatcher_connect(hass, f"{DOMAIN}_{entry.entry_id}_add_button", async_add_button)
+    )
 
 
 class FlicHubButtonBatterySensor(FlicHubButtonEntity, SensorEntity):

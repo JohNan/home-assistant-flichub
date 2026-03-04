@@ -62,7 +62,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 EVENT_DATA_NAME: button.name,
                 EVENT_DATA_CLICK_TYPE: event.action
             })
-        if event.event == "buttonReady":
+        if event.event == "buttonDeleted":
+            device_registry = dr.async_get(hass)
+            device = device_registry.async_get_device(identifiers={(DOMAIN, event.button)})
+            if device:
+                device_registry.async_remove_device(device.id)
+            hass.async_create_task(coordinator.async_refresh())
+        elif event.event == "buttonAdded":
+            async def add_and_refresh():
+                await coordinator.async_refresh()
+                from homeassistant.helpers.dispatcher import async_dispatcher_send
+                async_dispatcher_send(hass, f"{DOMAIN}_{entry.entry_id}_add_button", event.button)
+            hass.async_create_task(add_and_refresh())
+        elif event.event in ["buttonReady", "buttonConnected", "buttonDisconnected"]:
             hass.async_create_task(coordinator.async_refresh())
         if event.event == "actionMessage":
             hass.bus.fire(EVENT_ACTION_MESSAGE, {

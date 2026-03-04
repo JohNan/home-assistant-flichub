@@ -16,6 +16,7 @@ ICON = "mdi:format-quote-close"
 
 DATA_BUTTONS = "buttons"
 DATA_HUB = "network"
+DATA_VIRTUAL_DEVICES = "virtual_devices"
 
 # Device classes
 BINARY_SENSOR_DEVICE_CLASS = "connectivity"
@@ -34,7 +35,7 @@ EVENT_DATA_VALUES = "values"
 EVENT_DATA_BUTTON_NUMBER = "button_number"
 
 # Platforms
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.LIGHT, Platform.MEDIA_PLAYER, Platform.COVER]
 
 # Defaults
 DEFAULT_NAME = DOMAIN

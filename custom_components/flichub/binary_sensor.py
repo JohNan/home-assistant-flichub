@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from pyflichub.button import FlicButton
 from pyflichub.event import Event
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from pyflichub.flichub import FlicHubInfo
 from . import FlicHubEntryData
 from .const import DOMAIN
@@ -37,6 +38,21 @@ async def async_setup_entry(hass, entry, async_add_devices):
         FlicHubEthernetBinarySensor(data_entry.coordinator, entry, flic_hub),
     ])
     async_add_devices(devices)
+
+    def async_add_button(serial_number):
+        button = data_entry.coordinator.data[DATA_BUTTONS].get(serial_number)
+        if button:
+            async_add_devices([
+                FlicHubButtonBinarySensor(hass, data_entry.coordinator, entry, button, flic_hub),
+                FlicHubButtonPassiveBinarySensor(data_entry.coordinator, entry, button, flic_hub),
+                FlicHubButtonActiveDisconnectBinarySensor(data_entry.coordinator, entry, button, flic_hub),
+                FlicHubButtonConnectedBinarySensor(data_entry.coordinator, entry, button, flic_hub),
+                FlicHubButtonReadyBinarySensor(data_entry.coordinator, entry, button, flic_hub)
+            ])
+
+    entry.async_on_unload(
+        async_dispatcher_connect(hass, f"{DOMAIN}_{entry.entry_id}_add_button", async_add_button)
+    )
 
 
 class FlicHubWifiBinarySensor(FlicHubEntity, BinarySensorEntity):

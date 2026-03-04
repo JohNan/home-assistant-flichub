@@ -13,7 +13,7 @@ from pyflichub.flichub import FlicHubInfo
 from . import FlicHubEntryData
 from .const import DOMAIN
 from .const import EVENT_CLICK, EVENT_DATA_CLICK_TYPE, \
-    EVENT_DATA_SERIAL_NUMBER, EVENT_DATA_NAME, DATA_BUTTONS, DATA_HUB
+    EVENT_DATA_SERIAL_NUMBER, EVENT_DATA_NAME, DATA_BUTTONS, DATA_HUB, EVENT_DATA_BUTTON_NUMBER
 from .entity import FlicHubButtonEntity, FlicHubEntity
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
@@ -192,6 +192,7 @@ class FlicHubButtonBinarySensor(FlicHubButtonEntity, BinarySensorEntity):
         self._attr_unique_id = f"{self.serial_number}-button"
         self._is_on = False
         self._click_type = None
+        self._button_number = None
         hass.bus.async_listen(EVENT_CLICK, self._event_callback)
 
     @property
@@ -202,7 +203,10 @@ class FlicHubButtonBinarySensor(FlicHubButtonEntity, BinarySensorEntity):
     @property
     def extra_state_attributes(self):
         """Return the state attributes."""
-        attrs = {"click_type": self._click_type}
+        attrs = {
+            "click_type": self._click_type,
+            "button_number": self._button_number
+        }
         attrs.update(super().extra_state_attributes)
         return attrs
 
@@ -214,9 +218,15 @@ class FlicHubButtonBinarySensor(FlicHubButtonEntity, BinarySensorEntity):
 
         name = event.data[EVENT_DATA_NAME]
         click_type: Event = event.data[EVENT_DATA_CLICK_TYPE]
-        _LOGGER.debug(f"Button {name} clicked: {click_type}")
+        button_number = event.data.get(EVENT_DATA_BUTTON_NUMBER)
+
+        _LOGGER.debug(f"Button {name} clicked: {click_type}, button_number: {button_number}")
+
         if click_type in ['single', 'double', 'hold', 'double_hold', 'idle']:
             self._click_type = click_type
+
+        if button_number is not None:
+            self._button_number = button_number
 
         if click_type == 'down':
             self._is_on = True

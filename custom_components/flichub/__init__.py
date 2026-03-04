@@ -25,7 +25,7 @@ from pyflichub.event import Event
 from .const import CLIENT_READY_TIMEOUT, EVENT_CLICK, EVENT_DATA_NAME, EVENT_DATA_CLICK_TYPE, \
     EVENT_DATA_SERIAL_NUMBER, DATA_BUTTONS, DATA_HUB, REQUIRED_SERVER_VERSION, DEFAULT_SCAN_INTERVAL, \
     EVENT_ACTION_MESSAGE, EVENT_VIRTUAL_DEVICE_UPDATE, EVENT_DATA_ACTION, \
-    EVENT_DATA_META_DATA, EVENT_DATA_VALUES
+    EVENT_DATA_META_DATA, EVENT_DATA_VALUES, EVENT_DATA_BUTTON_NUMBER
 from .const import DOMAIN
 from .const import PLATFORMS
 
@@ -60,7 +60,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             hass.bus.fire(EVENT_CLICK, {
                 EVENT_DATA_SERIAL_NUMBER: button.serial_number,
                 EVENT_DATA_NAME: button.name,
-                EVENT_DATA_CLICK_TYPE: event.action
+                EVENT_DATA_CLICK_TYPE: event.action,
+                EVENT_DATA_BUTTON_NUMBER: event.button_number
             })
         if event.event == "buttonDeleted":
             device_registry = dr.async_get(hass)

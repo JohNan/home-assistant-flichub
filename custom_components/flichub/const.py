@@ -31,6 +31,7 @@ EVENT_DATA_SERIAL_NUMBER = "serial_number"
 EVENT_DATA_ACTION = "action"
 EVENT_DATA_META_DATA = "meta_data"
 EVENT_DATA_VALUES = "values"
+EVENT_DATA_BUTTON_NUMBER = "button_number"
 
 # Platforms
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR]

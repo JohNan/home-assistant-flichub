@@ -25,7 +25,7 @@ from pyflichub.event import Event
 from .const import CLIENT_READY_TIMEOUT, EVENT_CLICK, EVENT_DATA_NAME, EVENT_DATA_CLICK_TYPE, \
     EVENT_DATA_SERIAL_NUMBER, DATA_BUTTONS, DATA_HUB, REQUIRED_SERVER_VERSION, DEFAULT_SCAN_INTERVAL, \
     EVENT_ACTION_MESSAGE, EVENT_VIRTUAL_DEVICE_UPDATE, EVENT_DATA_ACTION, \
-    EVENT_DATA_META_DATA, EVENT_DATA_VALUES, EVENT_DATA_BUTTON_NUMBER
+    EVENT_DATA_META_DATA, EVENT_DATA_VALUES, EVENT_DATA_BUTTON_NUMBER, DATA_VIRTUAL_DEVICES
 from .const import DOMAIN
 from .const import PLATFORMS
 
@@ -82,6 +82,35 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 EVENT_DATA_ACTION: event.action
             })
         if event.event == "virtualDeviceUpdate":
+            button_id = event.meta_data.get("button_id")
+            virtual_device_id = event.meta_data.get("virtual_device_id")
+            dimmable_type = event.meta_data.get("dimmable_type")
+
+            # Persist and dispatch creation if not already created
+            if button_id and virtual_device_id and dimmable_type:
+                # Add it to the config entry options (or data)
+                new_device = {
+                    "button_id": button_id,
+                    "virtual_device_id": virtual_device_id,
+                    "dimmable_type": dimmable_type,
+                }
+
+                virtual_devices = entry.data.get(DATA_VIRTUAL_DEVICES, [])
+
+                # Check if it already exists
+                exists = any(d.get("button_id") == button_id and d.get("virtual_device_id") == virtual_device_id for d in virtual_devices)
+
+                if not exists:
+                    # Update config entry
+                    new_virtual_devices = virtual_devices + [new_device]
+                    new_data = dict(entry.data)
+                    new_data[DATA_VIRTUAL_DEVICES] = new_virtual_devices
+                    hass.config_entries.async_update_entry(entry, data=new_data)
+
+                    # Dispatch to platform setup
+                    from homeassistant.helpers.dispatcher import async_dispatcher_send
+                    async_dispatcher_send(hass, f"{DOMAIN}_{entry.entry_id}_add_virtual_device", new_device)
+
             hass.bus.fire(EVENT_VIRTUAL_DEVICE_UPDATE, {
                 EVENT_DATA_META_DATA: event.meta_data,
                 EVENT_DATA_VALUES: event.values

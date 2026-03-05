@@ -39,3 +39,12 @@ PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.LIGHT, Platform.M
 
 # Defaults
 DEFAULT_NAME = DOMAIN
+
+def get_button_by_id(buttons, button_id: str):
+    """Helper function to find a button by serial_number or bdaddr."""
+    if button_id in buttons:
+        return buttons[button_id]
+    for button in buttons.values():
+        if button.bdaddr == button_id:
+            return button
+    return None

@@ -86,6 +86,9 @@ class FlicHubVirtualSpeaker(FlicHubButtonEntity, MediaPlayerEntity):
         self._volume_level = 0.5
         self._state = MediaPlayerState.PLAYING
 
+        self._latest_values = {}
+        self._update_timer = None
+
     async def async_added_to_hass(self) -> None:
         """Run when entity about to be added to hass."""
         await super().async_added_to_hass()
@@ -106,6 +109,17 @@ class FlicHubVirtualSpeaker(FlicHubButtonEntity, MediaPlayerEntity):
 
         # The values themselves are always floating point numbers between 0 and 1
         # Extract and convert values
+        self._latest_values.update(values)
+
+        if self._update_timer is None:
+            self._update_timer = self.hass.loop.call_later(0.1, self._apply_latest_values)
+
+    def _apply_latest_values(self):
+        """Apply the latest values and update HA state."""
+        self._update_timer = None
+        values = self._latest_values
+        self._latest_values = {}
+
         if "volume" in values:
             self._volume_level = float(values["volume"])
 

@@ -88,6 +88,9 @@ class FlicHubVirtualLight(FlicHubButtonEntity, LightEntity):
         self._hs_color = None
         self._color_temp = None
 
+        self._latest_values = {}
+        self._update_timer = None
+
     async def async_added_to_hass(self) -> None:
         """Run when entity about to be added to hass."""
         await super().async_added_to_hass()
@@ -108,6 +111,17 @@ class FlicHubVirtualLight(FlicHubButtonEntity, LightEntity):
 
         # The values themselves are always floating point numbers between 0 and 1
         # Extract and convert values
+        self._latest_values.update(values)
+
+        if self._update_timer is None:
+            self._update_timer = self.hass.loop.call_later(0.1, self._apply_latest_values)
+
+    def _apply_latest_values(self):
+        """Apply the latest values and update HA state."""
+        self._update_timer = None
+        values = self._latest_values
+        self._latest_values = {}
+
         if "brightness" in values:
             self._brightness = int(values["brightness"] * 255)
             self._is_on = self._brightness > 0

@@ -1,2 +1,3 @@
-homeassistant
-pyflichub-tcpclient
+pytest
+pytest-asyncio
+pytest-homeassistant-custom-component

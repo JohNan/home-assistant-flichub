@@ -7,6 +7,7 @@ https://github.com/JohNan/flichub
 import async_timeout
 import asyncio
 import logging
+from typing import Any
 from dataclasses import dataclass
 from datetime import timedelta
 from homeassistant.helpers.issue_registry import async_create_issue, IssueSeverity
@@ -40,6 +41,7 @@ class FlicHubEntryData:
 
     client: FlicHubTcpClient
     coordinator: DataUpdateCoordinator[dict]
+    unsub_update_listener: Any = None
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
@@ -86,6 +88,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             virtual_device_id = event.meta_data.get("virtual_device_id")
             dimmable_type = event.meta_data.get("dimmable_type")
 
+            _LOGGER.debug(f"virtualDeviceUpdate received: button_id={button_id}, virtual_device_id={virtual_device_id}, dimmable_type={dimmable_type}, values={event.values}")
+
             # Persist and dispatch creation if not already created
             if button_id and virtual_device_id and dimmable_type:
                 # Add it to the config entry options (or data)
@@ -101,15 +105,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 exists = any(d.get("button_id") == button_id and d.get("virtual_device_id") == virtual_device_id for d in virtual_devices)
 
                 if not exists:
+                    _LOGGER.debug(f"Adding new virtual device to config entry: {new_device}")
                     # Update config entry
                     new_virtual_devices = virtual_devices + [new_device]
                     new_data = dict(entry.data)
                     new_data[DATA_VIRTUAL_DEVICES] = new_virtual_devices
+
+                    # Temporarily unsubscribe to avoid full integration reload on config entry update
+                    data_entry = hass.data[DOMAIN].get(entry.entry_id)
+                    if data_entry and data_entry.unsub_update_listener:
+                        data_entry.unsub_update_listener()
+
                     hass.config_entries.async_update_entry(entry, data=new_data)
 
+                    # Re-subscribe
+                    if data_entry:
+                        data_entry.unsub_update_listener = entry.add_update_listener(async_reload_entry)
+
                     # Dispatch to platform setup
+                    _LOGGER.debug(f"Dispatching virtual device creation for {virtual_device_id}")
                     from homeassistant.helpers.dispatcher import async_dispatcher_send
                     async_dispatcher_send(hass, f"{DOMAIN}_{entry.entry_id}_add_virtual_device", new_device)
+                else:
+                    _LOGGER.debug(f"Virtual device {virtual_device_id} for button {button_id} already exists in config.")
 
             hass.bus.fire(EVENT_VIRTUAL_DEVICE_UPDATE, {
                 EVENT_DATA_META_DATA: event.meta_data,
@@ -182,7 +200,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, stop_client)
 
     try:
-        with async_timeout.timeout(CLIENT_READY_TIMEOUT):
+        async with asyncio.timeout(CLIENT_READY_TIMEOUT):
             await client_ready.wait()
     except asyncio.TimeoutError:
         _LOGGER.error(f"Client not connected after {CLIENT_READY_TIMEOUT} secs. Discontinuing setup")
@@ -222,14 +240,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             model="LR",
         )
 
-    hass.data[DOMAIN][entry.entry_id] = FlicHubEntryData(
+    data = FlicHubEntryData(
         client=client,
         coordinator=coordinator
     )
 
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    data.unsub_update_listener = entry.add_update_listener(async_reload_entry)
+    hass.data[DOMAIN][entry.entry_id] = data
 
-    entry.add_update_listener(async_reload_entry)
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     async def send_virtual_device_update_state(call):
         """Service to send virtual device update state to Flic Hub."""

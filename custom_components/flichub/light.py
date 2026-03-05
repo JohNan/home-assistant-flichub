@@ -9,7 +9,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from pyflichub.flichub import FlicHubInfo
 
 from . import FlicHubEntryData
-from .const import DOMAIN, DATA_BUTTONS, DATA_HUB, DATA_VIRTUAL_DEVICES
+from .const import DOMAIN, DATA_BUTTONS, DATA_HUB, DATA_VIRTUAL_DEVICES, get_button_by_id
 from .const import EVENT_VIRTUAL_DEVICE_UPDATE, EVENT_DATA_META_DATA, EVENT_DATA_VALUES
 from .entity import FlicHubButtonEntity
 
@@ -27,13 +27,14 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
         if device_info.get("dimmable_type") == "Light":
             button_id = device_info.get("button_id")
             virtual_device_id = device_info.get("virtual_device_id")
-            if button_id in data_entry.coordinator.data[DATA_BUTTONS]:
+            button = get_button_by_id(data_entry.coordinator.data[DATA_BUTTONS], button_id)
+            if button:
                 devices.append(
                     FlicHubVirtualLight(
                         hass,
                         data_entry.coordinator,
                         entry,
-                        button_id,
+                        button.serial_number,
                         virtual_device_id,
                         flic_hub
                     )
@@ -47,13 +48,14 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
         if device_info.get("dimmable_type") == "Light":
             button_id = device_info.get("button_id")
             virtual_device_id = device_info.get("virtual_device_id")
-            if button_id in data_entry.coordinator.data[DATA_BUTTONS]:
+            button = get_button_by_id(data_entry.coordinator.data[DATA_BUTTONS], button_id)
+            if button:
                 async_add_devices([
                     FlicHubVirtualLight(
                         hass,
                         data_entry.coordinator,
                         entry,
-                        button_id,
+                        button.serial_number,
                         virtual_device_id,
                         flic_hub
                     )
@@ -99,7 +101,7 @@ class FlicHubVirtualLight(FlicHubButtonEntity, LightEntity):
         button_id = meta_data.get("button_id")
         virtual_device_id = meta_data.get("virtual_device_id")
 
-        if button_id != self.serial_number or virtual_device_id != self._virtual_device_id:
+        if button_id not in [self.serial_number, self.button.bdaddr] or virtual_device_id != self._virtual_device_id:
             return
 
         values = event.data.get(EVENT_DATA_VALUES, {})

@@ -7,6 +7,7 @@ from homeassistant.core import HomeAssistant, Event
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from pyflichub.flichub import FlicHubInfo
+from pyflichub.twist_controller import RateDetentController
 
 from . import FlicHubEntryData
 from .const import DOMAIN, DATA_BUTTONS, DATA_HUB, DATA_VIRTUAL_DEVICES, get_button_by_id
@@ -84,6 +85,15 @@ class FlicHubVirtualBlind(FlicHubButtonEntity, CoverEntity):
 
         # State
         self._position = 100 # Default open
+        self._position_controller = RateDetentController(
+            cfg={"minOutPct": 0, "maxOutPct": 100},
+            on_change_callback=self._on_position_change
+        )
+
+    def _on_position_change(self, new_position_pct: int) -> None:
+        """Handle smoothed position changes from the RateDetentController."""
+        self._position = new_position_pct
+        self.schedule_update_ha_state()
 
     async def async_added_to_hass(self) -> None:
         """Run when entity about to be added to hass."""
@@ -91,6 +101,12 @@ class FlicHubVirtualBlind(FlicHubButtonEntity, CoverEntity):
         self.async_on_remove(
             self.hass.bus.async_listen(EVENT_VIRTUAL_DEVICE_UPDATE, self._event_callback)
         )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Run when entity will be removed from hass."""
+        await super().async_will_remove_from_hass()
+        if self._position_controller:
+            self._position_controller.stop()
 
     def _event_callback(self, event: Event):
         """Handle virtual device update event."""
@@ -106,7 +122,7 @@ class FlicHubVirtualBlind(FlicHubButtonEntity, CoverEntity):
         # The values themselves are always floating point numbers between 0 and 1
         # Extract and convert values
         if "position" in values:
-            self._position = int(values["position"] * 100)
+            self._position_controller.update_raw(values["position"] * 100)
 
         self.schedule_update_ha_state()
 
@@ -128,5 +144,6 @@ class FlicHubVirtualBlind(FlicHubButtonEntity, CoverEntity):
         client = self.coordinator.hass.data[DOMAIN][self.config_entry.entry_id].client
         values = {"position": position / 100.0}
         self._position = position
+        self._position_controller.actual_out_pct = position
         client.send_virtual_device_update_state("Blind", self._virtual_device_id, values)
         self.async_write_ha_state()

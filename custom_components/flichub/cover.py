@@ -87,7 +87,8 @@ class FlicHubVirtualBlind(FlicHubButtonEntity, CoverEntity):
         self._position = 100 # Default open
         self._position_controller = RateDetentController(
             cfg={"minOutPct": 0, "maxOutPct": 100},
-            on_change_callback=self._on_position_change
+            on_change_callback=self._on_position_change,
+            loop=hass.loop
         )
 
     def _on_position_change(self, new_position_pct: int) -> None:

@@ -17,6 +17,6 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/JohNan/home-assistant-flichub/issues",
   "loggers": ["pyflichub"],
-  "requirements": ["pyflichub-tcpclient==0.1.16"],
+  "requirements": ["pyflichub-tcpclient @ git+https://github.com/JohNan/pyflichub-tcpclient.git@7b529a16e525b0b6258e9e409e436babf7acde14"],
   "version": "v0.0.0"
 }

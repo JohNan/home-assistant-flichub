@@ -43,6 +43,12 @@
       "down": "Button down",
       "up": "Button up",
       "double_hold": "Double click and hold"
+    },
+    "trigger_subtype": {
+      "button_0": "Button 1",
+      "button_1": "Button 2",
+      "button_2": "Button 3",
+      "button_3": "Button 4"
     }
   }
 }

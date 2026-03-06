@@ -4,6 +4,7 @@ from homeassistant.const import Platform
 # Base component constants
 NAME = "Flic Hub"
 DOMAIN = "flichub"
+CONF_SUBTYPE = "subtype"
 DOMAIN_DATA = f"{DOMAIN}_data"
 VERSION = "0.0.0"
 REQUIRED_SERVER_VERSION = "0.1.13"

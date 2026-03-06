@@ -88,7 +88,8 @@ class FlicHubVirtualSpeaker(FlicHubButtonEntity, MediaPlayerEntity):
         self._state = MediaPlayerState.PLAYING
         self._volume_controller = RateDetentController(
             cfg={"minOutPct": 0, "maxOutPct": 100},
-            on_change_callback=self._on_volume_change
+            on_change_callback=self._on_volume_change,
+            loop=hass.loop
         )
 
     def _on_volume_change(self, new_volume_pct: int) -> None:

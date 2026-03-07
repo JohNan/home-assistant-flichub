@@ -11,6 +11,9 @@ DEFAULT_SCAN_INTERVAL = 60
 
 CLIENT_READY_TIMEOUT = 20.0
 
+CONF_DEADBAND_ENTER = "deadband_enter"
+CONF_DEADBAND_EXIT = "deadband_exit"
+
 # Icons
 ICON = "mdi:format-quote-close"
 

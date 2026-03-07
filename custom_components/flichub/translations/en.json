@@ -24,7 +24,9 @@
       "user": {
         "data": {
           "binary_sensor": "Binary sensor enabled",
-          "sensor": "Sensor enabled"
+          "sensor": "Sensor enabled",
+          "deadband_enter": "Deadband enter",
+          "deadband_exit": "Deadband exit"
         }
       }
     }

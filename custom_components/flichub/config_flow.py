@@ -13,6 +13,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.device_registry import format_mac
 from pyflichub.client import FlicHubTcpClient
 from .const import CLIENT_READY_TIMEOUT
+from .const import CONF_DEADBAND_ENTER, CONF_DEADBAND_EXIT
 from .const import DOMAIN
 from .const import PLATFORMS
 
@@ -172,14 +173,16 @@ class FlicHubOptionsFlowHandler(config_entries.OptionsFlow):
             self.options.update(user_input)
             return await self._update_options()
 
+        schema = {
+            vol.Required(x.value, default=self.options.get(x.value, True)): bool
+            for x in sorted(PLATFORMS)
+        }
+        schema[vol.Optional(CONF_DEADBAND_ENTER, default=self.options.get(CONF_DEADBAND_ENTER, 2))] = int
+        schema[vol.Optional(CONF_DEADBAND_EXIT, default=self.options.get(CONF_DEADBAND_EXIT, 5))] = int
+
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(x.value, default=self.options.get(x.value, True)): bool
-                    for x in sorted(PLATFORMS)
-                }
-            ),
+            data_schema=vol.Schema(schema),
         )
 
     async def _update_options(self):

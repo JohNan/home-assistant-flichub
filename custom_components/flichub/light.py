@@ -10,6 +10,7 @@ from pyflichub.flichub import FlicHubInfo
 from pyflichub.twist_controller import RateDetentController
 
 from . import FlicHubEntryData
+from .const import CONF_DEADBAND_ENTER, CONF_DEADBAND_EXIT
 from .const import DOMAIN, DATA_BUTTONS, DATA_HUB, DATA_VIRTUAL_DEVICES, get_button_by_id
 from .const import EVENT_VIRTUAL_DEVICE_UPDATE, EVENT_DATA_META_DATA, EVENT_DATA_VALUES
 from .entity import FlicHubButtonEntity
@@ -89,7 +90,12 @@ class FlicHubVirtualLight(FlicHubButtonEntity, LightEntity):
         self._hs_color = None
         self._color_temp = None
         self._brightness_controller = RateDetentController(
-            cfg={"minOutPct": 0, "maxOutPct": 100},
+            cfg={
+                "minOutPct": 0,
+                "maxOutPct": 100,
+                "deadbandEnter": config_entry.options.get(CONF_DEADBAND_ENTER, 2),
+                "deadbandExit": config_entry.options.get(CONF_DEADBAND_EXIT, 5),
+            },
             on_change_callback=self._on_brightness_change,
             loop=hass.loop
         )

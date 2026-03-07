@@ -43,18 +43,18 @@
       "down": "Button down",
       "up": "Button up",
       "double_hold": "Double click and hold",
-      "single_button_0": "Single click (Left button)",
-      "double_button_0": "Double click (Left button)",
-      "hold_button_0": "Hold (Left button)",
-      "down_button_0": "Button down (Left button)",
-      "up_button_0": "Button up (Left button)",
-      "double_hold_button_0": "Double click and hold (Left button)",
-      "single_button_1": "Single click (Right button)",
-      "double_button_1": "Double click (Right button)",
-      "hold_button_1": "Hold (Right button)",
-      "down_button_1": "Button down (Right button)",
-      "up_button_1": "Button up (Right button)",
-      "double_hold_button_1": "Double click and hold (Right button)"
+      "single_button_0": "Single click (Large button)",
+      "double_button_0": "Double click (Large button)",
+      "hold_button_0": "Hold (Large button)",
+      "down_button_0": "Button down (Large button)",
+      "up_button_0": "Button up (Large button)",
+      "double_hold_button_0": "Double click and hold (Large button)",
+      "single_button_1": "Single click (Small button)",
+      "double_button_1": "Double click (Small button)",
+      "hold_button_1": "Hold (Small button)",
+      "down_button_1": "Button down (Small button)",
+      "up_button_1": "Button up (Small button)",
+      "double_hold_button_1": "Double click and hold (Small button)"
     }
   }
 }

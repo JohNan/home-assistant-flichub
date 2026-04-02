@@ -38,7 +38,7 @@ EVENT_DATA_VALUES = "values"
 EVENT_DATA_BUTTON_NUMBER = "button_number"
 
 # Platforms
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.LIGHT, Platform.MEDIA_PLAYER, Platform.COVER]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.LIGHT, Platform.MEDIA_PLAYER, Platform.COVER, "infrared"]
 
 # Defaults
 DEFAULT_NAME = DOMAIN

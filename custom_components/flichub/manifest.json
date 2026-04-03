@@ -5,6 +5,9 @@
     "@JohNan"
   ],
   "config_flow": true,
+  "dependencies": [
+    "infrared"
+  ],
   "dhcp": [
     {
       "hostname": "flichub",
@@ -24,8 +27,5 @@
   "requirements": [
     "pyflichub-tcpclient==0.1.19"
   ],
-  "version": "v0.0.0",
-  "dependencies": [
-    "infrared"
-  ]
+  "version": "v0.0.0"
 }

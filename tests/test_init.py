@@ -1,11 +1,4 @@
-
-from unittest.mock import PropertyMock
 import pytest
-
-@pytest.fixture(autouse=True)
-def patch_dependencies():
-    with patch("homeassistant.loader.Integration.dependencies", new_callable=PropertyMock, return_value=[]):
-        yield
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 from homeassistant.core import HomeAssistant

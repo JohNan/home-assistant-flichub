@@ -38,7 +38,7 @@ EVENT_DATA_VALUES = "values"
 EVENT_DATA_BUTTON_NUMBER = "button_number"
 
 # Platforms
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.LIGHT, Platform.MEDIA_PLAYER, Platform.COVER, "infrared"]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.LIGHT, Platform.MEDIA_PLAYER, Platform.COVER]
 
 # Defaults
 DEFAULT_NAME = DOMAIN
@@ -51,3 +51,8 @@ def get_button_by_id(buttons, button_id: str):
         if button.bdaddr == button_id:
             return button
     return None
+try:
+    from homeassistant.components.infrared import InfraredEntity
+    PLATFORMS.append(Platform("infrared") if hasattr(Platform, "INFRARED") else "infrared")
+except ImportError:
+    pass

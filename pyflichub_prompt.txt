@@ -1,0 +1,50 @@
+Update the `pyflichub-tcpclient` library and the associated `tcpserver.js` Flic Hub script to support playing raw IR timings. This is required to support Home Assistant's `infrared` entity platform, which sends protocol-agnostic timing arrays instead of pre-recorded signal IDs.
+
+### 1. Update `tcpserver.js`
+In the TCP server script running on the Flic Hub, add a handler for a new command called `"play_ir_raw"`. This handler should extract the `"arr"` property from the JSON payload (which will be an array of integers) and pass it directly to the Flic Hub JS SDK's `ir.play()` method.
+
+Example implementation in `tcpserver.js`:
+```javascript
+var ir = require("ir");
+
+// Inside your data event handler where you parse incoming JSON commands:
+if (data.command === "play_ir_raw") {
+    if (data.arr && Array.isArray(data.arr)) {
+        // Create an Uint32Array as required by the Flic Hub SDK
+        var timings = new Uint32Array(data.arr);
+        ir.play(timings, function(error) {
+            if (error) {
+                console.log("IR Play Error: " + error);
+            }
+        });
+    }
+}
+```
+
+### 2. Update `pyflichub-tcpclient`
+In the Python library, update `pyflichub.server_command.ServerCommand` to include the new command:
+```python
+class ServerCommand(StrEnum):
+    # ... existing commands ...
+    PLAY_IR_RAW = "play_ir_raw"
+```
+
+Add a new method `play_ir_raw` to `pyflichub.client.FlicHubTcpClient` to send the new payload:
+```python
+    def play_ir_raw(self, arr: list[int]):
+        """
+        Plays a raw IR signal.
+        The first element of the array should contain a carrier frequency in Hz (usually 38000 Hz).
+        The following elements indicate in microseconds how long each pulse should be active or silent, alternating.
+        """
+        payload = json.dumps({
+            "command": ServerCommand.PLAY_IR_RAW,
+            "arr": arr
+        })
+        if self._transport is not None:
+            self._transport.write(f"{payload}\n".encode())
+        else:
+            _LOGGER.error("Connection seems to be closed.")
+```
+
+Once this is implemented and released, the Home Assistant integration can be safely updated to map `InfraredCommand.get_raw_timings()` to this new API endpoint.

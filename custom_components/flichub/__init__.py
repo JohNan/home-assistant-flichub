@@ -49,6 +49,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     if hass.data.get(DOMAIN) is None:
         hass.data.setdefault(DOMAIN, {})
 
+    button_state = {}
+
     def update_device_registry_names(buttons):
         device_registry = dr.async_get(hass)
         for button in buttons:
@@ -65,6 +67,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 EVENT_DATA_CLICK_TYPE: event.action,
                 EVENT_DATA_BUTTON_NUMBER: event.button_number
             })
+
+            last_action = button_state.get(button.serial_number)
+            if event.action == "up":
+                if last_action == "hold":
+                    hass.bus.fire(EVENT_CLICK, {
+                        EVENT_DATA_SERIAL_NUMBER: button.serial_number,
+                        EVENT_DATA_NAME: button.name,
+                        EVENT_DATA_CLICK_TYPE: "hold_release",
+                        EVENT_DATA_BUTTON_NUMBER: event.button_number
+                    })
+                elif last_action == "double_hold":
+                    hass.bus.fire(EVENT_CLICK, {
+                        EVENT_DATA_SERIAL_NUMBER: button.serial_number,
+                        EVENT_DATA_NAME: button.name,
+                        EVENT_DATA_CLICK_TYPE: "double_hold_release",
+                        EVENT_DATA_BUTTON_NUMBER: event.button_number
+                    })
+
+            if event.action in ["single", "double", "hold", "down", "up", "double_hold"]:
+                button_state[button.serial_number] = event.action
         if event.event == "buttonDeleted":
             device_registry = dr.async_get(hass)
             device = device_registry.async_get_device(identifiers={(DOMAIN, event.button)})

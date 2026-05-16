@@ -222,7 +222,7 @@ class FlicHubButtonBinarySensor(FlicHubButtonEntity, BinarySensorEntity):
 
         _LOGGER.debug(f"Button {name} clicked: {click_type}, button_number: {button_number}")
 
-        if click_type in ['single', 'double', 'hold', 'double_hold', 'idle']:
+        if click_type in ['single', 'double', 'hold', 'double_hold', 'hold_release', 'double_hold_release', 'idle']:
             self._click_type = click_type
 
         if button_number is not None:

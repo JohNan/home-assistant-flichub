@@ -18,11 +18,11 @@ import re
 from .const import DOMAIN, EVENT_CLICK, EVENT_DATA_CLICK_TYPE, EVENT_DATA_SERIAL_NUMBER, EVENT_DATA_BUTTON_NUMBER
 
 # The trigger types that a button can emit
-TRIGGER_TYPES = {"single", "double", "hold", "down", "up", "double_hold"}
+TRIGGER_TYPES = {"single", "double", "hold", "hold_release", "down", "up", "double_hold", "double_hold_release"}
 
 TRIGGER_SCHEMA = DEVICE_TRIGGER_BASE_SCHEMA.extend(
     {
-        vol.Required(CONF_TYPE): cv.matches_regex(r"^(single|double|hold|down|up|double_hold)(?:_button_(\d+))?$"),
+        vol.Required(CONF_TYPE): cv.matches_regex(r"^(single|double|hold|hold_release|down|up|double_hold|double_hold_release)(?:_button_(\d+))?$"),
     }
 )
 
@@ -110,7 +110,7 @@ async def async_attach_trigger(
 
     trigger_type_config = config[CONF_TYPE]
 
-    match = re.match(r"^(single|double|hold|down|up|double_hold)(?:_button_(\d+))?$", trigger_type_config)
+    match = re.match(r"^(single|double|hold|hold_release|down|up|double_hold|double_hold_release)(?:_button_(\d+))?$", trigger_type_config)
     if not match:
         raise ValueError(f"Invalid trigger type {trigger_type_config}")
 

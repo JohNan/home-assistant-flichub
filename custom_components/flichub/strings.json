@@ -56,7 +56,13 @@
       "hold_button_1": "Hold (Small button)",
       "down_button_1": "Button down (Small button)",
       "up_button_1": "Button up (Small button)",
-      "double_hold_button_1": "Double click and hold (Small button)"
+      "double_hold_button_1": "Double click and hold (Small button)",
+      "hold_release": "Hold release",
+      "double_hold_release": "Double click and hold release",
+      "hold_release_button_0": "Hold release (Large button)",
+      "double_hold_release_button_0": "Double click and hold release (Large button)",
+      "hold_release_button_1": "Hold release (Small button)",
+      "double_hold_release_button_1": "Double click and hold release (Small button)"
     }
   }
 }

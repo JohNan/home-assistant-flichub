@@ -1,7 +1,8 @@
 try:
-    from homeassistant.components.infrared import InfraredEntity, InfraredCommand
+    from homeassistant.components.infrared import InfraredEmitterEntity
+    from infrared_protocols.commands import Command as InfraredCommand
 except ImportError:
-    InfraredEntity = object
+    InfraredEmitterEntity = object
     InfraredCommand = object
 from .entity import FlicHubEntity
 from .const import DOMAIN, DATA_HUB
@@ -17,7 +18,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     if hub_info:
         async_add_entities([FlicHubInfraredEntity(coordinator, entry, client, hub_info)])
 
-class FlicHubInfraredEntity(FlicHubEntity, InfraredEntity):
+class FlicHubInfraredEntity(FlicHubEntity, InfraredEmitterEntity):
     """Flic Hub IR Transmitter Entity."""
 
     _attr_name = "IR Transmitter"
@@ -39,10 +40,9 @@ class FlicHubInfraredEntity(FlicHubEntity, InfraredEntity):
     async def async_send_command(self, command: InfraredCommand) -> None:
         """Send an IR command."""
         timings = [
-            interval
+            timing
             for timing in command.get_raw_timings()
-            for interval in (timing.high_us, -timing.low_us)
         ]
 
         arr = [command.modulation] + timings
-        await self.client.play_ir_raw(arr)
+        self.client.play_ir_raw(arr)

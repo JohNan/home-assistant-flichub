@@ -1,8 +1,14 @@
 try:
     from homeassistant.components.infrared import InfraredEmitterEntity
+except ImportError:
+    try:
+        from homeassistant.components.infrared import InfraredEntity as InfraredEmitterEntity
+    except ImportError:
+        InfraredEmitterEntity = object
+
+try:
     from infrared_protocols.commands import Command as InfraredCommand
 except ImportError:
-    InfraredEmitterEntity = object
     InfraredCommand = object
 from .entity import FlicHubEntity
 from .const import DOMAIN, DATA_HUB

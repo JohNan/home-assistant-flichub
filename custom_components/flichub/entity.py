@@ -39,10 +39,10 @@ class FlicHubButtonEntity(CoordinatorEntity):
         return {
             "identifiers": {(DOMAIN, self.serial_number)},
             "name": self.button.name,
-            "model": self.button.flic_version,
+            "model": str(self.button.flic_version) if self.button.flic_version is not None else None,
             "connections": {(CONNECTION_BLUETOOTH, self.mac_address)},
             "sw_version": self.button.firmware_version,
-            "hw_version": self.button.flic_version,
+            "hw_version": str(self.button.flic_version) if self.button.flic_version is not None else None,
             "manufacturer": "Flic",
             "via_device": (DOMAIN, self.hub_mac_address)
         }

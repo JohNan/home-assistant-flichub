@@ -52,7 +52,11 @@ def get_button_by_id(buttons, button_id: str):
             return button
     return None
 try:
-    from homeassistant.components.infrared import InfraredEntity
+    from homeassistant.components.infrared import InfraredEmitterEntity
     PLATFORMS.append(Platform("infrared") if hasattr(Platform, "INFRARED") else "infrared")
 except ImportError:
-    pass
+    try:
+        from homeassistant.components.infrared import InfraredEntity
+        PLATFORMS.append(Platform("infrared") if hasattr(Platform, "INFRARED") else "infrared")
+    except ImportError:
+        pass

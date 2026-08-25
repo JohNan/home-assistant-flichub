@@ -14,6 +14,8 @@ from homeassistant.helpers.device_registry import format_mac
 from pyflichub.client import FlicHubTcpClient
 from .const import CLIENT_READY_TIMEOUT
 from .const import CONF_DEADBAND_ENTER, CONF_DEADBAND_EXIT
+from .const import CONF_DIAL_MODE_PREFIX, DIAL_MODE_DIRECT, DIAL_MODE_JOYSTICK
+from .const import DATA_VIRTUAL_DEVICES
 from .const import DOMAIN
 from .const import PLATFORMS
 
@@ -179,6 +181,32 @@ class FlicHubOptionsFlowHandler(config_entries.OptionsFlow):
         }
         schema[vol.Optional(CONF_DEADBAND_ENTER, default=self.options.get(CONF_DEADBAND_ENTER, 2))] = int
         schema[vol.Optional(CONF_DEADBAND_EXIT, default=self.options.get(CONF_DEADBAND_EXIT, 5))] = int
+
+        # One direct/joystick dial-mode dropdown per known virtual device
+        # (Light brightness, Speaker volume, or Blind position), so each
+        # Twist's virtual dial can be configured independently.
+        #
+        # Keyed on (button_id, virtual_device_id) rather than virtual_device_id
+        # alone: button_id is the Twist's Bluetooth address, a hardware
+        # identifier that can never collide between two physical devices, even
+        # if two different Twists' virtual devices happen to share a name.
+        virtual_devices = self.config_entry.data.get(DATA_VIRTUAL_DEVICES, [])
+        seen = set()
+        for device_info in virtual_devices:
+            if device_info.get("dimmable_type") not in ("Light", "Speaker", "Blind"):
+                continue
+            virtual_device_id = device_info.get("virtual_device_id")
+            button_id = device_info.get("button_id")
+            if not virtual_device_id or not button_id:
+                continue
+            dedupe_key = (button_id, virtual_device_id)
+            if dedupe_key in seen:
+                continue
+            seen.add(dedupe_key)
+            key = f"{CONF_DIAL_MODE_PREFIX}{virtual_device_id} [{button_id}]"
+            schema[vol.Optional(key, default=self.options.get(key, DIAL_MODE_DIRECT))] = vol.In(
+                [DIAL_MODE_DIRECT, DIAL_MODE_JOYSTICK]
+            )
 
         return self.async_show_form(
             step_id="user",

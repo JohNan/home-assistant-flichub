@@ -11,6 +11,7 @@ from pyflichub.twist_controller import RateDetentController
 
 from . import FlicHubEntryData
 from .const import CONF_DEADBAND_ENTER, CONF_DEADBAND_EXIT
+from .const import CONF_DIAL_MODE_PREFIX, DIAL_MODE_DIRECT, DIAL_MODE_JOYSTICK
 from .const import DOMAIN, DATA_BUTTONS, DATA_HUB, DATA_VIRTUAL_DEVICES, get_button_by_id
 from .const import EVENT_VIRTUAL_DEVICE_UPDATE, EVENT_DATA_META_DATA, EVENT_DATA_VALUES
 from .entity import FlicHubButtonEntity
@@ -68,8 +69,26 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
     )
 
 
+def _clamp01(x: float) -> float:
+    """Clamp a value to the 0.0-1.0 range."""
+    if x < 0.0:
+        return 0.0
+    if x > 1.0:
+        return 1.0
+    return x
+
+
 class FlicHubVirtualBlind(FlicHubButtonEntity, CoverEntity):
-    """Flic Hub Virtual Blind class."""
+    """Flic Hub Virtual Blind class.
+
+    Supports two independently-selectable dial control modes, set per
+    virtual device via the integration's options flow (same "dial mode"
+    dropdown pattern used for lights - see light.py for full details):
+
+    - "direct" (default): the Twist's raw rotation value (a float 0.0-1.0)
+      is applied to position immediately and proportionally, no ramping.
+    - "joystick": the original upstream behavior via RateDetentController.
+    """
 
     _attr_has_entity_name = True
     _attr_device_class = CoverDeviceClass.BLIND
@@ -86,19 +105,29 @@ class FlicHubVirtualBlind(FlicHubButtonEntity, CoverEntity):
 
         # State
         self._position = 100 # Default open
-        self._position_controller = RateDetentController(
-            cfg={
-                "minOutPct": 0,
-                "maxOutPct": 100,
-                "deadbandEnter": config_entry.options.get(CONF_DEADBAND_ENTER, 2),
-                "deadbandExit": config_entry.options.get(CONF_DEADBAND_EXIT, 5),
-            },
-            on_change_callback=self._on_position_change,
-            loop=hass.loop
-        )
+
+        # Per-device dial mode (see class docstring). Keyed on
+        # (button bdaddr, virtual_device_id) to stay collision-proof even if
+        # two different Twists' virtual devices happen to share a name -
+        # this must exactly match the key format built in config_flow.py.
+        dial_mode_key = f"{CONF_DIAL_MODE_PREFIX}{virtual_device_id} [{self.button.bdaddr}]"
+        self._dial_mode = config_entry.options.get(dial_mode_key, DIAL_MODE_DIRECT)
+
+        self._position_controller = None
+        if self._dial_mode == DIAL_MODE_JOYSTICK:
+            self._position_controller = RateDetentController(
+                cfg={
+                    "minOutPct": 0,
+                    "maxOutPct": 100,
+                    "deadbandEnter": config_entry.options.get(CONF_DEADBAND_ENTER, 2),
+                    "deadbandExit": config_entry.options.get(CONF_DEADBAND_EXIT, 5),
+                },
+                on_change_callback=self._on_position_change,
+                loop=hass.loop
+            )
 
     def _on_position_change(self, new_position_pct: int) -> None:
-        """Handle smoothed position changes from the RateDetentController."""
+        """Handle smoothed position changes from the RateDetentController (joystick mode only)."""
         self._position = new_position_pct
         self.schedule_update_ha_state()
 
@@ -127,9 +156,12 @@ class FlicHubVirtualBlind(FlicHubButtonEntity, CoverEntity):
         values = event.data.get(EVENT_DATA_VALUES, {})
 
         # The values themselves are always floating point numbers between 0 and 1
-        # Extract and convert values
         if "position" in values:
-            self._position_controller.update_raw(values["position"] * 100)
+            if self._dial_mode == DIAL_MODE_JOYSTICK and self._position_controller:
+                self._position_controller.update_raw(values["position"] * 100)
+            else:
+                # Direct mapping: apply immediately and proportionally, no smoothing/ramping.
+                self._position = int(round(_clamp01(values["position"]) * 100))
 
         self.schedule_update_ha_state()
 
@@ -151,6 +183,7 @@ class FlicHubVirtualBlind(FlicHubButtonEntity, CoverEntity):
         client = self.coordinator.hass.data[DOMAIN][self.config_entry.entry_id].client
         values = {"position": position / 100.0}
         self._position = position
-        self._position_controller.actual_out_pct = position
+        if self._position_controller:
+            self._position_controller.actual_out_pct = position
         client.send_virtual_device_update_state("Blind", self._virtual_device_id, values)
         self.async_write_ha_state()

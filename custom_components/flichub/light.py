@@ -3,7 +3,7 @@ import logging
 from typing import Any
 
 from homeassistant.components.light import ColorMode, LightEntity
-from homeassistant.core import HomeAssistant, Event
+from homeassistant.core import HomeAssistant, Event, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from pyflichub.flichub import FlicHubInfo
@@ -45,23 +45,36 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
     if devices:
         async_add_devices(devices)
 
+    @callback
+    def _create_virtual_light(device_info):
+        """Build a FlicHubVirtualLight from a device_info dict, or None."""
+        if device_info.get("dimmable_type") != "Light":
+            return None
+        button_id = device_info.get("button_id")
+        virtual_device_id = device_info.get("virtual_device_id")
+        button = get_button_by_id(data_entry.coordinator.data[DATA_BUTTONS], button_id)
+        if not button:
+            return None
+        return FlicHubVirtualLight(
+            hass,
+            data_entry.coordinator,
+            entry,
+            button.serial_number,
+            virtual_device_id,
+            flic_hub
+        )
+
+    @callback
+    def _async_add_virtual_device_on_loop(device_info):
+        """Add virtual device dynamically. Runs on the event loop thread."""
+        light = _create_virtual_light(device_info)
+        if light is not None:
+            async_add_devices([light])
+
     def async_add_virtual_device(device_info):
-        """Add virtual device dynamically."""
-        if device_info.get("dimmable_type") == "Light":
-            button_id = device_info.get("button_id")
-            virtual_device_id = device_info.get("virtual_device_id")
-            button = get_button_by_id(data_entry.coordinator.data[DATA_BUTTONS], button_id)
-            if button:
-                async_add_devices([
-                    FlicHubVirtualLight(
-                        hass,
-                        data_entry.coordinator,
-                        entry,
-                        button.serial_number,
-                        virtual_device_id,
-                        flic_hub
-                    )
-                ])
+        """Dispatcher target. May be invoked from a non-loop (worker) thread,
+        so marshal the actual entity registration onto the event loop."""
+        hass.loop.call_soon_threadsafe(_async_add_virtual_device_on_loop, device_info)
 
     entry.async_on_unload(
         async_dispatcher_connect(hass, f"{DOMAIN}_{entry.entry_id}_add_virtual_device", async_add_virtual_device)

@@ -11,6 +11,7 @@ from pyflichub.twist_controller import RateDetentController
 
 from . import FlicHubEntryData
 from .const import CONF_DEADBAND_ENTER, CONF_DEADBAND_EXIT
+from .const import CONF_DIAL_MODE_PREFIX, DIAL_MODE_DIRECT, DIAL_MODE_JOYSTICK
 from .const import DOMAIN, DATA_BUTTONS, DATA_HUB, DATA_VIRTUAL_DEVICES, get_button_by_id
 from .const import EVENT_VIRTUAL_DEVICE_UPDATE, EVENT_DATA_META_DATA, EVENT_DATA_VALUES
 from .entity import FlicHubButtonEntity
@@ -68,8 +69,26 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
     )
 
 
+def _clamp01(x: float) -> float:
+    """Clamp a value to the 0.0-1.0 range."""
+    if x < 0.0:
+        return 0.0
+    if x > 1.0:
+        return 1.0
+    return x
+
+
 class FlicHubVirtualSpeaker(FlicHubButtonEntity, MediaPlayerEntity):
-    """Flic Hub Virtual Speaker class."""
+    """Flic Hub Virtual Speaker class.
+
+    Supports two independently-selectable dial control modes, set per
+    virtual device via the integration's options flow (same "dial mode"
+    dropdown pattern used for lights - see light.py for full details):
+
+    - "direct" (default): the Twist's raw rotation value (a float 0.0-1.0)
+      is applied to volume immediately and proportionally, no ramping.
+    - "joystick": the original upstream behavior via RateDetentController.
+    """
 
     _attr_has_entity_name = True
     _attr_device_class = MediaPlayerDeviceClass.SPEAKER
@@ -87,19 +106,29 @@ class FlicHubVirtualSpeaker(FlicHubButtonEntity, MediaPlayerEntity):
         # State
         self._volume_level = 0.5
         self._state = MediaPlayerState.PLAYING
-        self._volume_controller = RateDetentController(
-            cfg={
-                "minOutPct": 0,
-                "maxOutPct": 100,
-                "deadbandEnter": config_entry.options.get(CONF_DEADBAND_ENTER, 2),
-                "deadbandExit": config_entry.options.get(CONF_DEADBAND_EXIT, 5),
-            },
-            on_change_callback=self._on_volume_change,
-            loop=hass.loop
-        )
+
+        # Per-device dial mode (see class docstring). Keyed on
+        # (button bdaddr, virtual_device_id) to stay collision-proof even if
+        # two different Twists' virtual devices happen to share a name -
+        # this must exactly match the key format built in config_flow.py.
+        dial_mode_key = f"{CONF_DIAL_MODE_PREFIX}{virtual_device_id} [{self.button.bdaddr}]"
+        self._dial_mode = config_entry.options.get(dial_mode_key, DIAL_MODE_DIRECT)
+
+        self._volume_controller = None
+        if self._dial_mode == DIAL_MODE_JOYSTICK:
+            self._volume_controller = RateDetentController(
+                cfg={
+                    "minOutPct": 0,
+                    "maxOutPct": 100,
+                    "deadbandEnter": config_entry.options.get(CONF_DEADBAND_ENTER, 2),
+                    "deadbandExit": config_entry.options.get(CONF_DEADBAND_EXIT, 5),
+                },
+                on_change_callback=self._on_volume_change,
+                loop=hass.loop
+            )
 
     def _on_volume_change(self, new_volume_pct: int) -> None:
-        """Handle smoothed volume changes from the RateDetentController."""
+        """Handle smoothed volume changes from the RateDetentController (joystick mode only)."""
         self._volume_level = new_volume_pct / 100.0
         self.schedule_update_ha_state()
 
@@ -128,9 +157,12 @@ class FlicHubVirtualSpeaker(FlicHubButtonEntity, MediaPlayerEntity):
         values = event.data.get(EVENT_DATA_VALUES, {})
 
         # The values themselves are always floating point numbers between 0 and 1
-        # Extract and convert values
         if "volume" in values:
-            self._volume_controller.update_raw(values["volume"] * 100)
+            if self._dial_mode == DIAL_MODE_JOYSTICK and self._volume_controller:
+                self._volume_controller.update_raw(values["volume"] * 100)
+            else:
+                # Direct mapping: apply immediately and proportionally, no smoothing/ramping.
+                self._volume_level = _clamp01(values["volume"])
 
         self.schedule_update_ha_state()
 
@@ -149,6 +181,7 @@ class FlicHubVirtualSpeaker(FlicHubButtonEntity, MediaPlayerEntity):
         client = self.coordinator.hass.data[DOMAIN][self.config_entry.entry_id].client
         values = {"volume": volume}
         self._volume_level = volume
-        self._volume_controller.actual_out_pct = volume * 100
+        if self._volume_controller:
+            self._volume_controller.actual_out_pct = volume * 100
         client.send_virtual_device_update_state("Speaker", self._virtual_device_id, values)
         self.async_write_ha_state()

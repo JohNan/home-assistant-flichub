@@ -23,6 +23,16 @@ Add the url to the repository as a custom integration.
 6. Restart Home Assistant
 7. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "Flic Hub"
 
+## Setting up the Flic Twist dial
+
+A Twist's rotation only works once it's bound to a **virtual device** — otherwise turning it does nothing. In the Flic app: open the Twist → its **Rotate** action → pick what to control (Brightness, Volume, Blind position, etc.) → **add devices** → **Flic Hub Studio** → **add a virtual device** (Light/Speaker/Blind) → give it a name → confirm it's assigned to Rotate.
+
+Once set up, turning the dial drives a matching entity in Home Assistant (e.g. `light.living_room_twist_ha_lamp_dial`) in real time — read its state in an automation to control anything else.
+
+Each Twist also gets its own **dial response mode** dropdown in Settings → Devices & Services → Flic Hub LR → Configure:
+- **Direct** (default) — turn to a spot, get that exact level every time, like a normal knob.
+- **Joystick** — hold the dial off-center to ramp the value up/down, like a game controller stick.
+
 ### DHCP Discovery
 Your FlicHub should automatically be discovered as a new integration based on dhcp discovery.
 If that doesn't work it can be setup manually by doing step 7 in the installation instructions

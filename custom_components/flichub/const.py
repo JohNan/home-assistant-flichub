@@ -14,6 +14,14 @@ CLIENT_READY_TIMEOUT = 20.0
 CONF_DEADBAND_ENTER = "deadband_enter"
 CONF_DEADBAND_EXIT = "deadband_exit"
 
+# Per-device dial control mode (see config_flow.py / light.py).
+# The prefix doubles as the field's displayed label in the options form
+# (Home Assistant shows the raw schema key when no translation override
+# exists), so it's written as a readable phrase rather than a snake_case key.
+CONF_DIAL_MODE_PREFIX = "Twist dial mode: "
+DIAL_MODE_DIRECT = "direct"
+DIAL_MODE_JOYSTICK = "joystick"
+
 # Icons
 ICON = "mdi:format-quote-close"
 

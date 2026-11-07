@@ -48,23 +48,30 @@ class FlicHubButtonEntity(CoordinatorEntity):
         }
 
     @property
-    def button(self) -> FlicButton:
-        return self.coordinator.data[DATA_BUTTONS][self.serial_number]
+    def button(self) -> FlicButton | None:
+        """Return the button from coordinator data, or None if the hub did not report it."""
+        if not self.coordinator.data:
+            return None
+        return self.coordinator.data.get(DATA_BUTTONS, {}).get(self.serial_number)
 
     @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
         """Return the state attributes."""
+        button = self.button
+        if button is None:
+            return None
         return {
-            "color": self.button.color,
-            "bluetooth_address": self.button.bdaddr,
-            "serial_number": self.button.serial_number,
+            "color": button.color,
+            "bluetooth_address": button.bdaddr,
+            "serial_number": button.serial_number,
             "integration": DOMAIN,
         }
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.button.connected
+        button = self.button
+        return super().available and button is not None and button.connected
 
 
 class FlicHubEntity(CoordinatorEntity):

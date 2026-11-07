@@ -16,7 +16,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT, EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, format_mac
 from pyflichub.button import FlicButton
@@ -196,11 +196,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     async def async_update() -> dict:
         buttons = await client.get_buttons()
         hub_info = await client.get_hubinfo()
-        if buttons is not None:
-            update_device_registry_names(buttons)
+        # The client returns None (hub info) or [] (buttons) when the hub does not answer in time.
+        # Raising UpdateFailed keeps the last known data, marks entities unavailable and logs
+        # the outage once (plus once on recovery) instead of on every entity state write.
+        if hub_info is None:
+            raise UpdateFailed("Flic Hub did not respond to hub info request")
+        if buttons is None:
+            raise UpdateFailed("Flic Hub did not respond to buttons request")
+        update_device_registry_names(buttons)
         return {
-            DATA_BUTTONS: {button.serial_number: button for button in buttons} if buttons is not None else {},
-            DATA_HUB: hub_info if hub_info is not None else {}
+            DATA_BUTTONS: {button.serial_number: button for button in buttons},
+            DATA_HUB: hub_info
         }
 
     async def client_connected():
@@ -237,7 +243,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         update_method=async_update
     )
 
-    await coordinator.async_config_entry_first_refresh()
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except ConfigEntryNotReady:
+        client.disconnect()
+        raise
 
     device_registry = dr.async_get(hass)
     hub_info = coordinator.data.get(DATA_HUB)

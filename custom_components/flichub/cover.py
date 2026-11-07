@@ -121,7 +121,8 @@ class FlicHubVirtualBlind(FlicHubButtonEntity, CoverEntity):
         button_id = meta_data.get("button_id")
         virtual_device_id = meta_data.get("virtual_device_id")
 
-        if button_id not in [self.serial_number, self.button.bdaddr] or virtual_device_id != self._virtual_device_id:
+        button = self.button
+        if button_id not in [self.serial_number, button.bdaddr if button else None] or virtual_device_id != self._virtual_device_id:
             return
 
         values = event.data.get(EVENT_DATA_VALUES, {})

@@ -85,7 +85,7 @@ class FlicHubWifiBinarySensor(FlicHubEntity, BinarySensorEntity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.flic_hub.has_wifi()
+        return super().available and self.flic_hub.has_wifi()
 
 
 class FlicHubEthernetBinarySensor(FlicHubEntity, BinarySensorEntity):
@@ -116,7 +116,7 @@ class FlicHubEthernetBinarySensor(FlicHubEntity, BinarySensorEntity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.flic_hub.has_ethernet()
+        return super().available and self.flic_hub.has_ethernet()
 
 
 class FlicHubButtonReadyBinarySensor(FlicHubButtonEntity, BinarySensorEntity):

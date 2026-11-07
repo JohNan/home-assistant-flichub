@@ -1,7 +1,7 @@
 {
   "name": "Flic Hub",
   "hacs": "1.6.0",
-  "homeassistant": "2021.12.0",
+  "homeassistant": "2026.8.0",
   "hide_default_branch": true,
   "zip_release": true,
   "filename": "flichub.zip"

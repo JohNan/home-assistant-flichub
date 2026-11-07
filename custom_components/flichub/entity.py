@@ -3,6 +3,7 @@ from typing import Mapping, Any
 
 from homeassistant.const import CONF_IP_ADDRESS
 
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import CONNECTION_BLUETOOTH, CONNECTION_NETWORK_MAC, format_mac
 
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -36,7 +37,7 @@ class FlicHubButtonEntity(CoordinatorEntity):
 
     @property
     def device_info(self):
-        return {
+        info = {
             "identifiers": {(DOMAIN, self.serial_number)},
             "name": self.button.name,
             "model": str(self.button.flic_version) if self.button.flic_version is not None else None,
@@ -44,8 +45,20 @@ class FlicHubButtonEntity(CoordinatorEntity):
             "sw_version": str(self.button.firmware_version) if self.button.firmware_version is not None else None,
             "hw_version": str(self.button.flic_version) if self.button.flic_version is not None else None,
             "manufacturer": "Flic",
-            "via_device": (DOMAIN, self.hub_mac_address)
         }
+        if (hub_device_id := self._hub_device_id()) is not None:
+            info["via_device_id"] = hub_device_id
+        return info
+
+    def _hub_device_id(self) -> str | None:
+        """Return the device registry id of the Flic Hub, if it is registered."""
+        hub_mac_address = self.hub_mac_address
+        if self.hass is None or hub_mac_address is None:
+            return None
+        hub_device = dr.async_get(self.hass).async_get_device_by_identifier(
+            (DOMAIN, hub_mac_address), self.config_entry.entry_id
+        )
+        return hub_device.id if hub_device else None
 
     @property
     def button(self) -> FlicButton:

@@ -42,6 +42,40 @@ def test_flichub_button_entity_device_info_sw_version_int():
     assert device_info["hw_version"] == "2"
     assert device_info["model"] == "2"
 
+def test_flichub_button_entity_missing_button_is_unavailable():
+    """A button missing from coordinator data must not raise from available or attributes."""
+    coordinator = MagicMock()
+    coordinator.last_update_success = True
+    coordinator.data = {DATA_BUTTONS: {}}
+
+    entity = FlicHubButtonEntity(
+        coordinator=coordinator,
+        config_entry=MagicMock(),
+        serial_number="button_serial_123",
+        flic_hub=MagicMock(),
+    )
+
+    assert entity.button is None
+    assert entity.available is False
+    assert entity.extra_state_attributes is None
+
+
+def test_flichub_button_entity_unavailable_when_coordinator_failed():
+    button = create_mock_button(firmware_version=3)
+    coordinator = MagicMock()
+    coordinator.last_update_success = False
+    coordinator.data = {DATA_BUTTONS: {"button_serial_123": button}}
+
+    entity = FlicHubButtonEntity(
+        coordinator=coordinator,
+        config_entry=MagicMock(),
+        serial_number="button_serial_123",
+        flic_hub=MagicMock(),
+    )
+
+    assert entity.available is False
+
+
 def test_flichub_button_entity_device_info_sw_version_none():
     button = create_mock_button(firmware_version=None, flic_version=None)
     coordinator = MagicMock()

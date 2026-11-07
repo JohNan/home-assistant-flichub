@@ -87,4 +87,4 @@ class FlicHubButtonBatteryTimestampSensor(FlicHubButtonEntity, SensorEntity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return True
+        return self.button is not None

@@ -22,8 +22,7 @@
     "pyflichub"
   ],
   "requirements": [
-    "pyflichub-tcpclient==0.1.19",
-    "infrared-protocols"
+    "pyflichub-tcpclient==0.1.19"
   ],
   "version": "v0.0.0"
 }

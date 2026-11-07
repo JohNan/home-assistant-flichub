@@ -54,7 +54,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     def update_device_registry_names(buttons):
         device_registry = dr.async_get(hass)
         for button in buttons:
-            device = device_registry.async_get_device(identifiers={(DOMAIN, button.serial_number)})
+            device = device_registry.async_get_device_by_identifier((DOMAIN, button.serial_number), entry.entry_id)
             if device and device.name != button.name:
                 device_registry.async_update_device(device.id, name=button.name)
 
@@ -89,7 +89,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 button_state[button.serial_number] = event.action
         if event.event == "buttonDeleted":
             device_registry = dr.async_get(hass)
-            device = device_registry.async_get_device(identifiers={(DOMAIN, event.button)})
+            device = device_registry.async_get_device_by_identifier((DOMAIN, event.button), entry.entry_id)
             if device:
                 device_registry.async_remove_device(device.id)
             hass.async_create_task(coordinator.async_refresh())

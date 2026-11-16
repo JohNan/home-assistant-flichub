@@ -7,6 +7,7 @@ https://github.com/JohNan/flichub
 import async_timeout
 import asyncio
 import logging
+import semver
 from typing import Any
 from dataclasses import dataclass
 from datetime import timedelta
@@ -162,7 +163,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             return
         if command.command == ServerCommand.SERVER_INFO:
             hub_version = command.data.version
-            if hub_version != REQUIRED_SERVER_VERSION:
+            if semver.compare(REQUIRED_SERVER_VERSION, hub_version) > 0 :
                 async_create_issue(
                     hass,
                     DOMAIN,
